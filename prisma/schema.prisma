@@ -21,6 +21,8 @@ model Usuario {
   tipo      TipoUsuario
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
+  empresa   Empresa?    @relation(fields: [empresaId], references: [id])
+  empresaId String?     @db.VarChar(36)
 
   @@map("usuarios")
 }
@@ -36,6 +38,23 @@ model Fornecedor {
   Produto   Produto[]
 
   @@map("fornecedores")
+}
+
+model Empresa {
+  id        String    @id @default(uuid()) @db.VarChar(36)
+  nome      String    @db.VarChar(60)
+  email     String    @unique @db.VarChar(60)
+  telefone  String?   @db.VarChar(15)
+  endereco  String?   @db.VarChar(255)
+  pais      String?   @db.VarChar(60)
+  estado    String?   @db.VarChar(2)
+  cidade    String?   @db.VarChar(60)
+  cep       String?   @db.VarChar(10)
+  usuario   Usuario[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("empresas")
 }
 
 model Produto {

@@ -17,6 +17,10 @@ import { createCategorias } from "./routes/categorias/create-categorias";
 import { getCategorias } from "./routes/categorias/get-categorias";
 import { deleteCategorias } from "./routes/categorias/delete-categorias";
 import { updateCategorias } from "./routes/categorias/update-categorias";
+import { createEmpresa } from "./routes/empresas/create-empresa";
+import { getEmpresa } from "./routes/empresas/get-empresa";
+import { deleteEmpresa } from "./routes/empresas/delete-empresa";
+import { updateEmpresa } from "./routes/empresas/update-empresa";
 
 const app = fastify();
 app.register(fastifyCors);
@@ -45,11 +49,17 @@ app.register(getCategorias);
 app.register(deleteCategorias);
 app.register(updateCategorias);
 
+// Rotas de Empresa
+app.register(createEmpresa);
+app.register(getEmpresa);
+app.register(deleteEmpresa);
+app.register(updateEmpresa);
+
 //Rotas Login
 app.register(loginUser);
 
 app.get("/", async (request, reply) => {
-  return reply.status(200).send({ mensagem: "Servidor rodando" });
+  return reply.status(200).send({ mensagem: "API Fastfy: StockControl" });
 });
 
 app.listen({ port: 3001 }).then(() => {
