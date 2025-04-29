@@ -1,0 +1,71 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id        String      @id @default(uuid()) @db.VarChar(36)
+  nome      String      @db.VarChar(60)
+  email     String      @unique @db.VarChar(60)
+  senha     String      @db.VarChar(60)
+  tipo      TipoUsuario
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@map("usuarios")
+}
+
+model Fornecedor {
+  id        String    @id @default(uuid()) @db.VarChar(36)
+  nome      String    @db.VarChar(60)
+  cnpj      String    @unique @db.VarChar(14)
+  telefone  String    @db.VarChar(15)
+  email     String    @unique @db.VarChar(60)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  Produto   Produto[]
+
+  @@map("fornecedores")
+}
+
+model Produto {
+  id           String      @id @default(uuid()) @db.VarChar(36)
+  nome         String      @db.VarChar(60)
+  descricao    String      @db.VarChar(255)
+  preco        Float
+  quantidade   Int
+  fornecedor   Fornecedor? @relation(fields: [fornecedorId], references: [id])
+  fornecedorId String?     @db.VarChar(36)
+  categoria    categoria?  @relation(fields: [categoriaId], references: [id])
+  categoriaId  String?     @db.VarChar(36)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@map("produtos")
+}
+
+model categoria {
+  id        String    @id @default(uuid()) @db.VarChar(36)
+  nome      String    @db.VarChar(60)
+  descricao String    @db.VarChar(255)
+  produtos  Produto[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("categorias")
+}
+
+enum TipoUsuario {
+  ADMIN
+  CLIENTE
+}
