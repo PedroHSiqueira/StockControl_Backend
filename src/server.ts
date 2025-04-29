@@ -22,31 +22,35 @@ const app = fastify();
 app.register(fastifyCors);
 
 // Rotas de Usuarios
-app.register(createUser)
-app.register(getUsers)
-app.register(deleteUser)
-app.register(updateUser)
+app.register(createUser);
+app.register(getUsers);
+app.register(deleteUser);
+app.register(updateUser);
 
 // Rotas de Fornecedores
-app.register(createFornecedor)
-app.register(getFornecedor)
-app.register(deleteFornecedor)
-app.register(updateFornecedor)
+app.register(createFornecedor);
+app.register(getFornecedor);
+app.register(deleteFornecedor);
+app.register(updateFornecedor);
 
 // Rotas de Produtos
-app.register(createProduto)
-app.register(getProduto)
-app.register(deleteProduto)
-app.register(updateProduto)
+app.register(createProduto);
+app.register(getProduto);
+app.register(deleteProduto);
+app.register(updateProduto);
 
 // Rotas de categorias
-app.register(createCategorias)
-app.register(getCategorias)
-app.register(deleteCategorias)
-app.register(updateCategorias)
+app.register(createCategorias);
+app.register(getCategorias);
+app.register(deleteCategorias);
+app.register(updateCategorias);
 
-//Rotas Login 
-app.register(loginUser)
+//Rotas Login
+app.register(loginUser);
+
+app.get("/", async (request, reply) => {
+  return reply.status(200).send({ mensagem: "Servidor rodando" });
+});
 
 app.listen({ port: 3001 }).then(() => {
   console.log("Servidor rodando na porta 3001");
