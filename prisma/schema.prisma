@@ -88,4 +88,5 @@ model categoria {
 enum TipoUsuario {
   ADMIN
   CLIENTE
+  PROPRIETARIO
 }
