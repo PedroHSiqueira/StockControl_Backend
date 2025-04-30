@@ -44,6 +44,7 @@ model Empresa {
   id        String    @id @default(uuid()) @db.VarChar(36)
   nome      String    @db.VarChar(60)
   email     String    @unique @db.VarChar(60)
+  foto      String?   @db.VarChar(255)
   telefone  String?   @db.VarChar(15)
   endereco  String?   @db.VarChar(255)
   pais      String?   @db.VarChar(60)

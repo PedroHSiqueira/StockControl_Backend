@@ -7,6 +7,7 @@ export async function updateEmpresa(app: FastifyInstance) {
     const updateEmpresaBody = z.object({
       nome: z.string().min(1, "Nome é obrigatório"),
       email: z.string().email("Email inválido"),
+      foto: z.string().optional(),
       telefone: z.string().optional(),
       endereco: z.string().optional(),
       pais: z.string().optional(),
@@ -16,7 +17,7 @@ export async function updateEmpresa(app: FastifyInstance) {
     });
 
     const { id } = request.params as { id: string };
-    const { nome, email, telefone, endereco, pais, estado, cidade, cep } = updateEmpresaBody.parse(request.body);
+    const { nome, email, foto, telefone, endereco, pais, estado, cidade, cep } = updateEmpresaBody.parse(request.body);
 
     const empresa = await prisma.empresa.update({
       where: {
@@ -25,6 +26,7 @@ export async function updateEmpresa(app: FastifyInstance) {
       data: {
         nome,
         email,
+        foto,
         telefone,
         endereco,
         pais,

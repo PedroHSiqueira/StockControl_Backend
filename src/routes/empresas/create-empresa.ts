@@ -7,6 +7,7 @@ export async function createEmpresa(app: FastifyInstance) {
     const criarEmpresaBody = z.object({
       nome: z.string().min(1, "Nome é obrigatório"),
       email: z.string().email("Email inválido"),
+      foto: z.string().optional(),
       telefone: z.string().optional(),
       endereco: z.string().optional(),
       pais: z.string().optional(),
@@ -15,7 +16,7 @@ export async function createEmpresa(app: FastifyInstance) {
       cep: z.string().optional(),
     });
 
-    const { nome, email, telefone, endereco, pais, estado, cidade, cep } = criarEmpresaBody.parse(request.body);
+    const { nome, email, foto, telefone, endereco, pais, estado, cidade, cep } = criarEmpresaBody.parse(request.body);
 
     if (!nome || !email) {
       reply.status(400).send({ mensagem: "Nome e email são obrigatórios" });
@@ -27,6 +28,7 @@ export async function createEmpresa(app: FastifyInstance) {
         nome,
         email,
         telefone,
+        foto,
         endereco,
         pais,
         estado,
