@@ -1,4 +1,4 @@
-import { FastifyInstance } from "fastify";
+import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { prisma } from "../../lib/prisma";
 
 export async function getEmpresa(app: FastifyInstance) {
@@ -7,4 +7,23 @@ export async function getEmpresa(app: FastifyInstance) {
 
     reply.send(empresas);
   });
+  
+  
+  app.get("/empresa/:idUsuario", async (request: FastifyRequest, reply: FastifyReply) => {
+    const { idUsuario } = request.params as { idUsuario: string };
+
+    const usuario = await prisma.usuario.findUnique({
+      where: { id: idUsuario },
+      include: {
+        empresa: true,
+      },
+    });
+
+    if (!usuario || !usuario.empresa) {
+      return reply.status(404).send({ mensagem: "Empresa não encontrada" });
+    }
+
+    return reply.send(usuario.empresa);
+  });
 }
+

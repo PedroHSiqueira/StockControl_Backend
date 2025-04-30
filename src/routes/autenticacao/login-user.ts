@@ -29,6 +29,6 @@ export async function loginUser(app: FastifyInstance) {
       return;
     }
 
-    reply.send({ message: "Usuário logado com sucesso" });
+    reply.send({ message: "Usuário logado com sucesso", nome: user.nome, id: user.id });
   });
 }

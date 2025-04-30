@@ -41,20 +41,14 @@ export async function createUser(app: FastifyInstance) {
       nome: z.string(),
       email: z.string().email(),
       senha: z.string(),
-      TipoUsuario: z.enum([TipoUsuario.CLIENTE, TipoUsuario.ADMIN]),
+      tipo: z.enum([TipoUsuario.CLIENTE, TipoUsuario.ADMIN]),
     });
 
-    const { nome, email, senha } = criarUsuarioBody.parse(request.body);
-
-    if (!nome || !email || !senha) {
-      reply.status(400).send({ mensagem: "Preencha todos os campos" });
-      return;
-    }
+    const { nome, email, senha, tipo } = criarUsuarioBody.parse(request.body);
 
     const erros = validarSenha(senha);
     if (erros.length > 0) {
-      reply.status(400).send({ mensagem: "Senha Inválida" });
-      return;
+      return reply.status(400).send({ mensagem: "Senha Inválida" });
     }
 
     const salt = bcrypt.genSaltSync(12);
@@ -62,12 +56,13 @@ export async function createUser(app: FastifyInstance) {
 
     const usuario = await prisma.usuario.create({
       data: {
-        nome: nome,
-        email: email,
+        nome,
+        email,
         senha: hash,
-        tipo: TipoUsuario.CLIENTE,
+        tipo, 
       },
     });
+
     return reply.status(201).send(usuario);
   });
 }
