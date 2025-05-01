@@ -4,24 +4,45 @@ import { prisma } from "../../lib/prisma";
 
 export async function updateUser(app: FastifyInstance) {
   app.put("/usuarios/:id", async (request, reply) => {
-    const updateUserBody = z.object({
+    const updateBody = z.object({
       nome: z.string(),
       email: z.string().email(),
+      empresa: z
+        .object({
+          nome: z.string().optional(),
+          telefone: z.string().optional(),
+          endereco: z.string().optional(),
+          pais: z.string().optional(),
+          estado: z.string().optional(),
+          cidade: z.string().optional(),
+          cep: z.string().optional(),
+        })
+        .optional(),
     });
 
     const { id } = request.params as { id: string };
-    const { nome, email } = updateUserBody.parse(request.body);
+    const { nome, email, empresa } = updateBody.parse(request.body);
 
-    const user = await prisma.usuario.update({
-      where: {
-        id: String(id),
-      },
-      data: {
-        nome: nome,
-        email: email,
-      },
+    const usuarioAtualizado = await prisma.usuario.update({
+      where: { id },
+      data: { nome, email },
     });
 
-    reply.send(user);
+    if (empresa) {
+      await prisma.empresa.updateMany({
+        where: { id: usuarioAtualizado.empresaId || undefined },
+        data: {
+          nome: empresa.nome,
+          telefone: empresa.telefone,
+          endereco: empresa.endereco,
+          pais: empresa.pais,
+          estado: empresa.estado,
+          cidade: empresa.cidade,
+          cep: empresa.cep,
+        },
+      });
+    }
+
+    reply.send({ mensagem: "Conta atualizada com sucesso!" });
   });
 }

@@ -16,26 +16,51 @@ export async function createEmpresa(app: FastifyInstance) {
       cep: z.string().optional(),
     });
 
-    const { nome, email, foto, telefone, endereco, pais, estado, cidade, cep } = criarEmpresaBody.parse(request.body);
+    const userId = request.headers["user-id"] as string | undefined;
 
-    if (!nome || !email) {
-      reply.status(400).send({ mensagem: "Nome e email são obrigatórios" });
-      return;
+    if (!userId) {
+      return reply.status(401).send({ mensagem: "Usuário não autenticado" });
     }
+
+    const {
+      nome,
+      email,
+      foto,
+      telefone,
+      endereco,
+      pais,
+      estado,
+      cidade,
+      cep,
+    } = criarEmpresaBody.parse(request.body);
 
     const empresa = await prisma.empresa.create({
       data: {
         nome,
         email,
-        telefone,
         foto,
+        telefone,
         endereco,
         pais,
         estado,
         cidade,
         cep,
+        usuario: {
+          connect: {
+            id: userId,
+          },
+        },
       },
     });
+
+    await prisma.usuario.update({
+      where: { id: userId },
+      data: {
+        empresaId: empresa.id,
+        tipo: "PROPRIETARIO",
+      },
+    });
+
     return reply.status(201).send(empresa);
   });
 }
