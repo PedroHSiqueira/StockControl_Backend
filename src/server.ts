@@ -23,7 +23,14 @@ import { deleteEmpresa } from "./routes/empresas/delete-empresa";
 import { updateEmpresa } from "./routes/empresas/update-empresa";
 
 const app = fastify();
-app.register(fastifyCors);
+
+// Configuração do CORS
+app.register(fastifyCors, {
+  origin: ['http://localhost:3000'], 
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'], 
+  credentials: true,
+});
 
 // Rotas de Usuarios
 app.register(createUser);
