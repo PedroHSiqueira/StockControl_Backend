@@ -14,15 +14,16 @@ datasource db {
 }
 
 model Usuario {
-  id        String      @id @default(uuid()) @db.VarChar(36)
-  nome      String      @db.VarChar(60)
-  email     String      @unique @db.VarChar(60)
-  senha     String      @db.VarChar(60)
-  tipo      TipoUsuario
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  empresa   Empresa?    @relation(fields: [empresaId], references: [id])
-  empresaId String?     @db.VarChar(36)
+  id          String        @id @default(uuid()) @db.VarChar(36)
+  nome        String        @db.VarChar(60)
+  email       String        @unique @db.VarChar(60)
+  senha       String        @db.VarChar(60)
+  tipo        TipoUsuario
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  empresa     Empresa?      @relation(fields: [empresaId], references: [id])
+  empresaId   String?       @db.VarChar(36)
+  Notificacao Notificacao[]
 
   @@map("usuarios")
 }
@@ -83,6 +84,19 @@ model categoria {
   updatedAt DateTime  @updatedAt
 
   @@map("categorias")
+}
+
+model Notificacao {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  titulo    String   @db.VarChar(60)
+  descricao String   @db.VarChar(255)
+  lida      Boolean  @default(false)
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id])
+  usuarioId String?  @db.VarChar(36)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("notificacoes")
 }
 
 enum TipoUsuario {

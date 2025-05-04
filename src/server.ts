@@ -21,6 +21,10 @@ import { createEmpresa } from "./routes/empresas/create-empresa";
 import { getEmpresa } from "./routes/empresas/get-empresa";
 import { deleteEmpresa } from "./routes/empresas/delete-empresa";
 import { updateEmpresa } from "./routes/empresas/update-empresa";
+import { createNotificacao } from "./routes/notificacao/create-notificacao";
+import { getNotificacao } from "./routes/notificacao/get-notificacao";
+import { updateNotificacao } from "./routes/notificacao/update-notificacao";
+import { deleteNotificacao } from "./routes/notificacao/delete-notificacao";
 
 const app = fastify();
 
@@ -61,6 +65,12 @@ app.register(createEmpresa);
 app.register(getEmpresa);
 app.register(deleteEmpresa);
 app.register(updateEmpresa);
+
+// Rotas Notificações
+app.register(createNotificacao);
+app.register(getNotificacao);
+app.register(updateNotificacao);
+app.register(deleteNotificacao);
 
 //Rotas Login
 app.register(loginUser);
