@@ -10,20 +10,19 @@ export async function getEmpresa(app: FastifyInstance) {
   app.get("/empresa/:idUsuario", async (request: FastifyRequest, reply: FastifyReply) => {
     const { idUsuario } = request.params as { idUsuario: string };
 
-    const usuario = await prisma.usuario.findUnique({
-      where: { id: idUsuario },
+    const empresa = await prisma.usuario.findUnique({
+      where: {
+        id: String(idUsuario),
+      },
       include: {
-        empresa: true,  
+        empresa: true,
       },
     });
 
-    if (!usuario || !usuario.empresa) {
-      return reply.status(404).send({ mensagem: "Empresa não encontrada" });
+    if (!empresa) {
+      return reply.status(404).send({ mensagem: "Usuário não encontrado" });
     }
 
-    return reply.send({
-      empresa: usuario.empresa,   
-      tipoUsuario: usuario.tipo,  
-    });
+    reply.send(empresa.empresa);
   });
 }

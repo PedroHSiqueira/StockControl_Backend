@@ -7,4 +7,21 @@ export async function getNotificacao(app: FastifyInstance) {
 
     reply.send(notificacao);
   });
+
+  app.get("/notificacao/:id", async (request, reply) => {
+    const { id } = request.params as { id: string };
+
+    const notificacao = await prisma.notificacao.findMany({
+      where: {
+        usuarioId: String(id),
+      },
+    });
+
+    if (!notificacao) {
+      return reply.status(404).send({ mensagem: "Notificação não encontrada" });
+    }
+
+    reply.send(notificacao);
+  });
+  
 }
