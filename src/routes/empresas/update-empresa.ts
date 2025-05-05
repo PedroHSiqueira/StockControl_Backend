@@ -3,11 +3,11 @@ import { z } from "zod";
 import { prisma } from "../../lib/prisma";
 
 export async function updateEmpresa(app: FastifyInstance) {
-  app.put("/empresa/:id", async (request, reply) => {
+  app.put("/empresa/:id/:usuarioId", async (request, reply) => {
     try {
       const updateEmpresaBody = z.object({
-        nome: z.string().min(1),
-        email: z.string().email(),
+        nome: z.string().min(1).optional().nullable(),
+        email: z.string().email().optional().nullable(),
         foto: z.string().optional().nullable(),
         telefone: z.string().optional().nullable(),
         endereco: z.string().optional().nullable(),
@@ -17,17 +17,12 @@ export async function updateEmpresa(app: FastifyInstance) {
         cep: z.string().optional().nullable(),
       });
   
-      const { id } = request.params as { id: string };
+      const { id, usuarioId } = request.params as { id: string, usuarioId: string };
       const data = updateEmpresaBody.parse(request.body);
   
-      const { idUsuario } = request.body as { idUsuario: string };
-      
-      if (!idUsuario) {
-        return reply.status(400).send({ mensagem: "ID do usuário não fornecido" });
-      }
   
       const usuario = await prisma.usuario.findUnique({
-        where: { id: idUsuario },  
+        where: { id: usuarioId },  
         include: {
           empresa: true,
         },
@@ -53,7 +48,17 @@ export async function updateEmpresa(app: FastifyInstance) {
   
       const empresaAtualizada = await prisma.empresa.update({
         where: { id: String(id) },
-        data,
+        data: {
+          ...(data.nome !== null && { nome: data.nome }),
+          ...(data.email !== null && { email: data.email }),
+          ...(data.foto !== null && { foto: data.foto }),
+          ...(data.telefone !== null && { telefone: data.telefone }),
+          ...(data.endereco !== null && { endereco: data.endereco }),
+          ...(data.pais !== null && { pais: data.pais }),
+          ...(data.estado !== null && { estado: data.estado }),
+          ...(data.cidade !== null && { cidade: data.cidade }),
+          ...(data.cep !== null && { cep: data.cep }),
+        },
       });
   
       return reply.send(empresaAtualizada);

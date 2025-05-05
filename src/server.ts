@@ -32,7 +32,7 @@ const app = fastify();
 app.register(fastifyCors, {
   origin: ['http://localhost:3000'], 
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'user-id'], 
+  allowedHeaders: ['Content-Type', 'Authorization', 'user-id', 'client_key'], 
   credentials: true,
 });
 
