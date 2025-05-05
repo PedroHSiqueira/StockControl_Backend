@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "../../lib/prisma";
 
 export async function updateUser(app: FastifyInstance) {
-  app.put("/usuarios/:id", async (request, reply) => {
+  app.put("/usuario/:id", async (request, reply) => {
     const updateBody = z.object({
       nome: z.string(),
       email: z.string().email(),
