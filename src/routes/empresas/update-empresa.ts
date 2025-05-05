@@ -16,36 +16,35 @@ export async function updateEmpresa(app: FastifyInstance) {
         cidade: z.string().optional().nullable(),
         cep: z.string().optional().nullable(),
       });
-  
-      const { id, usuarioId } = request.params as { id: string, usuarioId: string };
+
+      const { id, usuarioId } = request.params as { id: string; usuarioId: string };
       const data = updateEmpresaBody.parse(request.body);
-  
-  
+
       const usuario = await prisma.usuario.findUnique({
-        where: { id: usuarioId },  
+        where: { id: usuarioId },
         include: {
           empresa: true,
         },
       });
-  
+
       if (!usuario || !usuario.empresa) {
         return reply.status(404).send({ mensagem: "Usuário ou empresa não encontrados" });
       }
-  
+
       if (usuario.empresa.id !== id) {
         return reply.status(403).send({ mensagem: "Você não tem permissão para editar esta empresa" });
       }
-  
-      if (usuario.tipo === 'CLIENTE') {
+
+      if (usuario.tipo === "CLIENTE") {
         return reply.status(403).send({ mensagem: "Clientes não podem editar dados da empresa" });
       }
-  
-      if (usuario.tipo === 'ADMIN') {
+
+      if (usuario.tipo === "ADMIN") {
         if (data.nome !== usuario.empresa.nome || data.email !== usuario.empresa.email) {
           return reply.status(403).send({ mensagem: "Você não tem permissão para alterar o nome ou email" });
         }
       }
-  
+
       const empresaAtualizada = await prisma.empresa.update({
         where: { id: String(id) },
         data: {
@@ -60,9 +59,8 @@ export async function updateEmpresa(app: FastifyInstance) {
           ...(data.cep !== null && { cep: data.cep }),
         },
       });
-  
+
       return reply.send(empresaAtualizada);
-  
     } catch (error: any) {
       console.error("Erro ao atualizar empresa:", error.message);
       console.error("Detalhes do erro:", error);
