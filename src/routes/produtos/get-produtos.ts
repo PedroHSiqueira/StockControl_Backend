@@ -3,7 +3,14 @@ import { prisma } from "../../lib/prisma";
 
 export async function getProduto(app: FastifyInstance) {
   app.get("/produtos", async (request, reply) => {
-    const fornecedor = await prisma.produto.findMany();
+    const fornecedor = await prisma.produto.findMany(
+      {
+        include: {
+          categoria: true,
+          fornecedor: true,
+        },
+      }
+    );
 
     reply.send(fornecedor);
   });
