@@ -65,6 +65,7 @@ model Produto {
   descricao    String      @db.VarChar(255)
   preco        Float
   quantidade   Int
+  foto         String?     @db.VarChar(255)
   fornecedor   Fornecedor? @relation(fields: [fornecedorId], references: [id])
   fornecedorId String?     @db.VarChar(36)
   categoria    categoria?  @relation(fields: [categoriaId], references: [id])
