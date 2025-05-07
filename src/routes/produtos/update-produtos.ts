@@ -14,12 +14,12 @@ export async function updateProduto(app: FastifyInstance) {
       fornecedorId: z.string().optional(),
     });
 
-    const { id } = request.params as { id: string };
+    const { id } = request.params as { id: number };
     const { nome, descricao, preco, quantidade, foto, categoriaId, fornecedorId} = updateProdutosBody.parse(request.body);
 
     const fornecedor = await prisma.produto.update({
       where: {
-        id: String(id),
+        id: id,
       },
       data: {
         nome: nome,
