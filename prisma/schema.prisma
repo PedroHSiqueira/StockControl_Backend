@@ -22,7 +22,7 @@ model Usuario {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   empresa     Empresa?      @relation(fields: [empresaId], references: [id])
-  empresaId   String?       @db.VarChar(36)
+  empresaId   Int?
   Notificacao Notificacao[]
 
   @@map("usuarios")
@@ -42,7 +42,7 @@ model Fornecedor {
 }
 
 model Empresa {
-  id        String    @id @default(uuid()) @db.VarChar(36)
+  id        Int       @id @default(autoincrement())
   nome      String    @db.VarChar(60)
   email     String    @unique @db.VarChar(60)
   foto      String?   @db.VarChar(255)
