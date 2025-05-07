@@ -19,7 +19,7 @@ export async function updateProduto(app: FastifyInstance) {
 
     const fornecedor = await prisma.produto.update({
       where: {
-        id: id,
+        id: Number(id),
       },
       data: {
         nome: nome,
