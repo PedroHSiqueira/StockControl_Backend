@@ -10,7 +10,7 @@ CREATE TABLE "usuarios" (
     "tipo" "TipoUsuario" NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "empresaId" INTEGER,
+    "empresaId" VARCHAR(36),
 
     CONSTRAINT "usuarios_pkey" PRIMARY KEY ("id")
 );
@@ -30,7 +30,7 @@ CREATE TABLE "fornecedores" (
 
 -- CreateTable
 CREATE TABLE "empresas" (
-    "id" SERIAL NOT NULL,
+    "id" VARCHAR(36) NOT NULL,
     "nome" VARCHAR(60) NOT NULL,
     "email" VARCHAR(60) NOT NULL,
     "foto" VARCHAR(255),
@@ -48,7 +48,7 @@ CREATE TABLE "empresas" (
 
 -- CreateTable
 CREATE TABLE "produtos" (
-    "id" VARCHAR(36) NOT NULL,
+    "id" SERIAL NOT NULL,
     "nome" VARCHAR(60) NOT NULL,
     "descricao" VARCHAR(255) NOT NULL,
     "preco" DOUBLE PRECISION NOT NULL,
