@@ -8,6 +8,7 @@ export async function getProduto(app: FastifyInstance) {
         include: {
           categoria: true,
           fornecedor: true,
+          empresa: true
         },
       }
     );

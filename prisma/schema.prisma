@@ -53,6 +53,7 @@ model Empresa {
   cidade    String?   @db.VarChar(60)
   cep       String?   @db.VarChar(10)
   usuario   Usuario[]
+  Produto   Produto[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
@@ -70,6 +71,8 @@ model Produto {
   fornecedorId String?     @db.VarChar(36)
   categoria    categoria?  @relation(fields: [categoriaId], references: [id])
   categoriaId  String?     @db.VarChar(36)
+  empresa      Empresa?    @relation(fields: [empresaId], references: [id])
+  empresaId    String?     @db.VarChar(36)
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
