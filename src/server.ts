@@ -25,6 +25,10 @@ import { createNotificacao } from "./routes/notificacao/create-notificacao";
 import { getNotificacao } from "./routes/notificacao/get-notificacao";
 import { updateNotificacao } from "./routes/notificacao/update-notificacao";
 import { deleteNotificacao } from "./routes/notificacao/delete-notificacao";
+import { createConvite } from "./routes/convites/create-convites";
+import { getConvite } from "./routes/convites/get-convites";
+import { deleteConvite } from "./routes/convites/delete-convites";
+import { updateConvite } from "./routes/convites/update-convites";
 
 const app = fastify();
 
@@ -71,6 +75,12 @@ app.register(createNotificacao);
 app.register(getNotificacao);
 app.register(updateNotificacao);
 app.register(deleteNotificacao);
+
+//Rotas de convites
+app.register(createConvite);
+app.register(getConvite);
+app.register(deleteConvite);
+app.register(updateConvite);
 
 //Rotas Login
 app.register(loginUser);
