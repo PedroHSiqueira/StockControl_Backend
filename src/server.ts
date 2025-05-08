@@ -29,7 +29,7 @@ import { createConvite } from "./routes/convites/create-convites";
 import { getConvite } from "./routes/convites/get-convites";
 import { deleteConvite } from "./routes/convites/delete-convites";
 import { updateConvite } from "./routes/convites/update-convites";
-
+ 
 const app = fastify();
 
 // Configuração do CORS
