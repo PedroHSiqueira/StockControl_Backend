@@ -54,6 +54,7 @@ model Empresa {
   cep       String?   @db.VarChar(10)
   usuario   Usuario[]
   Produto   Produto[]
+  Convite   Convite[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
@@ -95,16 +96,37 @@ model Notificacao {
   titulo    String   @db.VarChar(60)
   descricao String   @db.VarChar(255)
   lida      Boolean  @default(false)
-  usuario   Usuario? @relation(fields: [usuarioId], references: [id])
   usuarioId String?  @db.VarChar(36)
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id])
+  conviteId String?  @unique @db.VarChar(36)
+  convite   Convite? @relation(fields: [conviteId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("notificacoes")
 }
 
+model Convite {
+  id          String        @id @default(uuid()) @db.VarChar(36)
+  email       String        @db.VarChar(60)
+  empresaId   String        @db.VarChar(36)
+  empresa     Empresa       @relation(fields: [empresaId], references: [id])
+  status      StatusConvite @default(PENDENTE)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  notificacao Notificacao?
+
+  @@map("convites")
+}
+
 enum TipoUsuario {
   ADMIN
   FUNCIONARIO
   PROPRIETARIO
+}
+
+enum StatusConvite {
+  PENDENTE
+  ACEITO
+  RECUSADO
 }
