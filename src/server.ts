@@ -39,7 +39,7 @@ app.register(fastifyCors, {
   allowedHeaders: ['Content-Type', 'Authorization', 'user-id', 'client_key'], 
   credentials: true,
 });
-
+   
 // Rotas de Usuarios
 app.register(createUser);
 app.register(getUsers);
