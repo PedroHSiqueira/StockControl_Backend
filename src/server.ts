@@ -25,11 +25,7 @@ import { createNotificacao } from "./routes/notificacao/create-notificacao";
 import { getNotificacao } from "./routes/notificacao/get-notificacao";
 import { updateNotificacao } from "./routes/notificacao/update-notificacao";
 import { deleteNotificacao } from "./routes/notificacao/delete-notificacao";
-import { createConvite } from "./routes/convites/create-convites";
-import { getConvite } from "./routes/convites/get-convites";
-import { deleteConvite } from "./routes/convites/delete-convites";
-import { updateConvite } from "./routes/convites/update-convites";
- 
+
 const app = fastify();
 
 // Configuração do CORS
@@ -39,7 +35,7 @@ app.register(fastifyCors, {
   allowedHeaders: ['Content-Type', 'Authorization', 'user-id', 'client_key'], 
   credentials: true,
 });
-   
+
 // Rotas de Usuarios
 app.register(createUser);
 app.register(getUsers);
@@ -75,12 +71,6 @@ app.register(createNotificacao);
 app.register(getNotificacao);
 app.register(updateNotificacao);
 app.register(deleteNotificacao);
-
-//Rotas Convites
-app.register(createConvite);
-app.register(getConvite);
-app.register(deleteConvite);
-app.register(updateConvite);
 
 //Rotas Login
 app.register(loginUser);
