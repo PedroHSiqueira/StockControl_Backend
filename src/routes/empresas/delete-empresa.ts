@@ -27,7 +27,7 @@ export async function deleteEmpresa(app: FastifyInstance) {
     await prisma.usuario.update({
       where: { id },
       data: {
-        tipo: "CLIENTE",
+        tipo: "FUNCIONARIO",
         empresaId: null,
       },
     });

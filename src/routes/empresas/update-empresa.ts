@@ -35,7 +35,7 @@ export async function updateEmpresa(app: FastifyInstance) {
         return reply.status(403).send({ mensagem: "Você não tem permissão para editar esta empresa" });
       }
 
-      if (usuario.tipo === "CLIENTE") {
+      if (usuario.tipo === "FUNCIONARIO") {
         return reply.status(403).send({ mensagem: "Clientes não podem editar dados da empresa" });
       }
 
