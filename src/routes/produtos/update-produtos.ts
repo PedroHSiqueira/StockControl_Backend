@@ -16,7 +16,7 @@ export async function updateProduto(app: FastifyInstance) {
     });
 
     const { id } = request.params as { id: number };
-    const { nome, descricao, preco, quantidade, foto, categoriaId, fornecedorId, empresaId} = updateProdutosBody.parse(request.body);
+    const { nome, descricao, preco, quantidade, foto, categoriaId, fornecedorId, empresaId } = updateProdutosBody.parse(request.body);
 
     const fornecedor = await prisma.produto.update({
       where: {

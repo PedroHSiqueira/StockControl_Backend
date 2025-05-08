@@ -59,7 +59,7 @@ export async function createUser(app: FastifyInstance) {
         nome,
         email,
         senha: hash,
-        tipo, 
+        tipo,
       },
     });
 

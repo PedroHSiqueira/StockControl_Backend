@@ -15,7 +15,7 @@ export async function createProduto(app: FastifyInstance) {
       empresaId: z.string().optional()
     });
 
-    const { nome, descricao, preco, quantidade, foto, categoriaId, fornecedorId, empresaId} = criarProdutoBody.parse(request.body);
+    const { nome, descricao, preco, quantidade, foto, categoriaId, fornecedorId, empresaId } = criarProdutoBody.parse(request.body);
 
     if (!nome || !descricao || !preco || !quantidade) {
       reply.status(400).send({ mensagem: "Preencha todos os campos" });
