@@ -30,7 +30,7 @@ const app = fastify();
 
 // Configuração do CORS
 app.register(fastifyCors, {
-  origin: ['https://stockcontrol-six.vercel.app'], 
+  origin: ['http://localhost:3000', 'https://stockcontrol-frontend.vercel.app'], 
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization', 'user-id', 'client_key'], 
   credentials: true,

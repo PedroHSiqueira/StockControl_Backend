@@ -41,7 +41,7 @@ export async function createUser(app: FastifyInstance) {
       nome: z.string(),
       email: z.string().email(),
       senha: z.string(),
-      tipo: z.enum([TipoUsuario.CLIENTE, TipoUsuario.ADMIN]),
+      tipo: z.enum([TipoUsuario.FUNCIONARIO, TipoUsuario.ADMIN]),
     });
 
     const { nome, email, senha, tipo } = criarUsuarioBody.parse(request.body);

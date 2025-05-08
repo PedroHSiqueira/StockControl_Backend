@@ -105,6 +105,6 @@ model Notificacao {
 
 enum TipoUsuario {
   ADMIN
-  CLIENTE
+  FUNCIONARIO
   PROPRIETARIO
 }
