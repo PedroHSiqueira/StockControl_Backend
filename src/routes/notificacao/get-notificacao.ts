@@ -3,7 +3,18 @@ import { prisma } from "../../lib/prisma";
 
 export async function getNotificacao(app: FastifyInstance) {
   app.get("/notificacao", async (request, reply) => {
-    const notificacao = await prisma.notificacao.findMany();
+    const notificacao = await prisma.notificacao.findMany({
+      include: {
+        convite: {
+          include: {
+            empresa: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
 
     reply.send(notificacao);
   });

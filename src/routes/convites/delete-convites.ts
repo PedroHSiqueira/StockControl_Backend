@@ -5,12 +5,11 @@ export async function deleteConvite(app: FastifyInstance) {
   app.delete("/convite/:id", async (request, reply) => {
     const { id } = request.params as { id: string };
 
-    const convite = await prisma.convite.delete({
+   const notificacao = await prisma.notificacao.delete({
       where: {
-        id: String(id),
+        conviteId: id,
       },
     });
-
     reply.status(204);
   });
 }

@@ -5,8 +5,9 @@ import { prisma } from "../../lib/prisma";
 export async function updateUser(app: FastifyInstance) {
   app.put("/usuario/:id", async (request, reply) => {
     const updateBody = z.object({
-      nome: z.string(),
-      email: z.string().email(),
+      nome: z.string().optional(),
+      email: z.string().email().optional(),
+      empresaId: z.string().uuid().optional(),
       empresa: z
         .object({
           nome: z.string().optional(),
@@ -21,11 +22,11 @@ export async function updateUser(app: FastifyInstance) {
     });
 
     const { id } = request.params as { id: string };
-    const { nome, email, empresa } = updateBody.parse(request.body);
+    const { nome, email, empresa, empresaId } = updateBody.parse(request.body);
 
     const usuarioAtualizado = await prisma.usuario.update({
       where: { id },
-      data: { nome, email },
+      data: { nome, email, empresaId },
     });
 
     if (empresa) {
@@ -44,5 +45,27 @@ export async function updateUser(app: FastifyInstance) {
     }
 
     reply.send({ mensagem: "Conta atualizada com sucesso!" });
-  });
+  })
+
+  app.put("/usuario/convite/:id", async (request, reply) => {
+    const updateBody = z.object({
+      empresaId: z.string().uuid(),
+    });
+
+    const { id } = request.params as { id: string };
+    const { empresaId } = updateBody.parse(request.body);
+
+    const empresaAtualizada = await prisma.usuario.update({
+      where: { id },
+      data: { empresaId },
+    });
+
+    const deletaNotificacao = await prisma.notificacao.deleteMany({
+      where: {
+        usuarioId: id,
+      },
+    });
+
+    reply.send({ mensagem: "Usuario Vinculado a empresa" });
+  })
 }
