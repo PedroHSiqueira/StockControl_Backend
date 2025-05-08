@@ -5,7 +5,7 @@ export async function deleteConvite(app: FastifyInstance) {
   app.delete("/convite/:id", async (request, reply) => {
     const { id } = request.params as { id: string };
 
-   const notificacao = await prisma.notificacao.delete({
+    const notificacao = await prisma.notificacao.delete({
       where: {
         conviteId: id,
       },

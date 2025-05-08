@@ -22,7 +22,6 @@ export async function createConvite(app: FastifyInstance) {
       },
     });
 
-
     if (usuario) {
       await prisma.notificacao.create({
         data: {
