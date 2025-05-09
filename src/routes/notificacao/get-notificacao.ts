@@ -10,10 +10,10 @@ export async function getNotificacao(app: FastifyInstance) {
             empresa: true,
           },
         },
-        usuario: {  
+        usuario: {
           select: {
             id: true,
-            nome: true,  
+            nome: true,
           },
         },
       },
@@ -38,10 +38,10 @@ export async function getNotificacao(app: FastifyInstance) {
             empresa: true,
           },
         },
-        usuario: {  
+        usuario: {
           select: {
             id: true,
-            nome: true,  
+            nome: true,
           },
         },
       },
