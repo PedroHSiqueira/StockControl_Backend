@@ -12,7 +12,7 @@ export async function updateNotificacao(app: FastifyInstance) {
     });
 
     const { id } = request.params as { id: string };
-    const { titulo, descricao, lida, usuarioId} = criarNotificacaoBody.parse(request.body);
+    const { titulo, descricao, lida, usuarioId } = criarNotificacaoBody.parse(request.body);
 
     const notificacao = await prisma.notificacao.update({
       where: {
