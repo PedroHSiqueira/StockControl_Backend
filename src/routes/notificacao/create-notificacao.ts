@@ -14,7 +14,7 @@ export async function createNotificacao(app: FastifyInstance) {
     const { titulo, descricao, lida, usuarioId } = criarNotificacaoBody.parse(request.body);
 
     if (!titulo || !descricao || !usuarioId) {
-      reply.status(400).send({ mensagem: " Favor Preencha todos os campos por favor" });
+      reply.status(400).send({ mensagem: "Favor preencha todos os campos" });
       return;
     }
 
@@ -25,11 +25,12 @@ export async function createNotificacao(app: FastifyInstance) {
         lida,
         usuario: {
           connect: {
-            id: usuarioId,
+            id: usuarioId, 
           },
         },
       },
     });
+
     return reply.status(201).send(notificacao);
   });
 }

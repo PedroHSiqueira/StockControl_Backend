@@ -10,6 +10,12 @@ export async function getNotificacao(app: FastifyInstance) {
             empresa: true,
           },
         },
+        usuario: {  
+          select: {
+            id: true,
+            nome: true,  
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
@@ -30,6 +36,12 @@ export async function getNotificacao(app: FastifyInstance) {
         convite: {
           include: {
             empresa: true,
+          },
+        },
+        usuario: {  
+          select: {
+            id: true,
+            nome: true,  
           },
         },
       },
