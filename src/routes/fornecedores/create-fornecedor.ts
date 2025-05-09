@@ -14,10 +14,9 @@ export async function createFornecedor(app: FastifyInstance) {
     const { nome,email, cnpj,telefone } = criarFornecedorBody.parse(request.body);
 
     if (!nome || !email || !cnpj || !telefone) {
-      reply.status(400).send({ mensagem: "Preencha todos os campos" });
+      reply.status(400).send({ mensagem: "Preencha todos os campos por favor" });
       return;
     }
-
 
     const fornecedor = await prisma.fornecedor.create({
       data: {

@@ -48,7 +48,7 @@ export async function createUser(app: FastifyInstance) {
 
     const erros = validarSenha(senha);
     if (erros.length > 0) {
-      return reply.status(400).send({ mensagem: "Senha Inválida" });
+      return reply.status(400).send({ mensagem: "Senha Inválida verifique e tente novamente" });
     }
 
     const salt = bcrypt.genSaltSync(12);

@@ -34,7 +34,7 @@ const app = fastify();
 
 // Configuração do CORS
 app.register(fastifyCors, {
-  origin: ['https://stockcontrol-backend-chi.vercel.app/'], 
+  origin: ['https://stockcontrol-backend-chi.vercel.app'], 
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization', 'user-id', 'client_key'], 
   credentials: true,
@@ -90,5 +90,5 @@ app.get("/", async (request, reply) => {
 });
 
 app.listen({ port: 3001 }).then(() => {
-  console.log("Servidor rodando na porta 3001");
+  console.log("Servidor rodando na porta 3001 com sucesso");
 });
