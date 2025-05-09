@@ -7,7 +7,8 @@ export async function updateUser(app: FastifyInstance) {
     const updateBody = z.object({
       nome: z.string().optional(),
       email: z.string().email().optional(),
-      empresaId: z.string().uuid().optional(),
+      tipo: z.enum(["FUNCIONARIO", "ADMIN", "PROPRIETARIO"]).optional(),
+      empresaId: z.string().uuid().nullable().optional(), 
       empresa: z
         .object({
           nome: z.string().optional(),
@@ -20,13 +21,25 @@ export async function updateUser(app: FastifyInstance) {
         })
         .optional(),
     });
+    
 
     const { id } = request.params as { id: string };
-    const { nome, email, empresa, empresaId } = updateBody.parse(request.body);
+    const { nome, email, tipo, empresa, empresaId } = updateBody.parse(request.body);
+
+    let updateData: any = { nome, email, tipo };
+    if (empresaId === null) {
+      updateData = {
+        ...updateData,
+        empresaId: null,
+        tipo: "FUNCIONARIO", 
+      };
+    } else {
+      updateData = { ...updateData, empresaId };
+    }
 
     const usuarioAtualizado = await prisma.usuario.update({
       where: { id },
-      data: { nome, email, empresaId },
+      data: updateData,
     });
 
     if (empresa) {
@@ -45,8 +58,7 @@ export async function updateUser(app: FastifyInstance) {
     }
 
     reply.send({ mensagem: "Conta atualizada com sucesso!" });
-  })
-
+  });
   app.put("/usuario/convite/:id", async (request, reply) => {
     const updateBody = z.object({
       empresaId: z.string().uuid(),
