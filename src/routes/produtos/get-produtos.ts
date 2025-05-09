@@ -15,4 +15,3 @@ export async function getProduto(app: FastifyInstance) {
   });
 }
 
-//teste deploy vercel

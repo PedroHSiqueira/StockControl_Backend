@@ -17,4 +17,3 @@ export async function deleteUser(app: FastifyInstance) {
   });
 }
 
-//teste deploy vercel

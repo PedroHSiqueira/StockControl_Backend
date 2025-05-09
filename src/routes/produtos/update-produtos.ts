@@ -37,4 +37,3 @@ export async function updateProduto(app: FastifyInstance) {
     reply.send(fornecedor);
   });
 }
-//teste deploy vercel

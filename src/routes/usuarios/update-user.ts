@@ -81,4 +81,3 @@ export async function updateUser(app: FastifyInstance) {
     reply.send({ mensagem: "Usuario Vinculado a empresa com sucesso" });
   })
 }
-//teste deploy vercel
