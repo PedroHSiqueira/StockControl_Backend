@@ -85,10 +85,12 @@ app.register(updateConvite);
 //Rotas Login
 app.register(loginUser);
 
+//Rotas Finalizadas
+
 app.get("/", async (request, reply) => {
   return reply.status(200).send({ mensagem: "API Fastfy: StockControl" });
 });
 
 app.listen({ port: 3001 }).then(() => {
-  console.log("Servidor rodando na porta 3001 com sucesso");
+  console.log("Servidor rodando na porta 3001");
 });
