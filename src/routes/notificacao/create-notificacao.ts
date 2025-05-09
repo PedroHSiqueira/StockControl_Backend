@@ -12,6 +12,8 @@ export async function createNotificacao(app: FastifyInstance) {
       nomeRemetente: z.string().min(1, "Nome do remetente é obrigatório") 
     });
 
+
+    
     const { titulo, descricao, lida, usuarioId, nomeRemetente } = criarNotificacaoBody.parse(request.body);
 
     if (!titulo || !descricao || !usuarioId || !nomeRemetente) {

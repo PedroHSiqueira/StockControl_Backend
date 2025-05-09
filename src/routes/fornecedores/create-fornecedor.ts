@@ -13,8 +13,9 @@ export async function createFornecedor(app: FastifyInstance) {
 
     const { nome,email, cnpj,telefone } = criarFornecedorBody.parse(request.body);
 
+
     if (!nome || !email || !cnpj || !telefone) {
-      reply.status(400).send({ mensagem: "Preencha todos os campos por favor" });
+      reply.status(400).send({ mensagem: "Por favor, Prencheer todo os campos" });
       return;
     }
 
