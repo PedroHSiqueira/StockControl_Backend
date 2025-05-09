@@ -8,6 +8,7 @@ export async function getUsers(app: FastifyInstance) {
     reply.send(users);
   });
 
+
   app.get("/usuario/:id", async (request, reply) => {
     const { id } = request.params as { id: string };
 
@@ -18,7 +19,7 @@ export async function getUsers(app: FastifyInstance) {
     });
 
     if (!user) {
-      return reply.status(404).send({ mensagem: "Usuário não encontrado" });
+      return reply.status(404).send({ mensagem: "Usuário não encontrado, tente novamente" });
     }
 
     reply.send(user);
