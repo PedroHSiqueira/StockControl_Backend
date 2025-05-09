@@ -14,3 +14,5 @@ export async function getProduto(app: FastifyInstance) {
     reply.send(fornecedor);
   });
 }
+
+//teste deploy vercel

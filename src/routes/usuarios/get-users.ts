@@ -26,3 +26,5 @@ export async function getUsers(app: FastifyInstance) {
   }
   );
 }
+
+//teste deploy vercel
