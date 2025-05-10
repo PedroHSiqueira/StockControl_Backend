@@ -9,10 +9,11 @@ export async function updateFornecedor(app: FastifyInstance) {
       email: z.string().email(),
       cnpj: z.string(),
       telefone: z.string(),
+      foto: z.string().optional(),
     });
 
     const { id } = request.params as { id: string };
-    const { nome, email, cnpj, telefone } = updateUserBody.parse(request.body);
+    const { nome, email, cnpj, telefone, foto } = updateUserBody.parse(request.body);
 
     const fornecedor = await prisma.fornecedor.update({
       where: {
@@ -23,6 +24,7 @@ export async function updateFornecedor(app: FastifyInstance) {
         email: email,
         cnpj: cnpj,
         telefone: telefone,
+        foto: foto,
       },
     });
 
