@@ -31,8 +31,8 @@ model Usuario {
 model Fornecedor {
   id        String    @id @default(uuid()) @db.VarChar(36)
   nome      String    @db.VarChar(60)
-  cnpj      String    @unique @db.VarChar(14)
-  telefone  String    @db.VarChar(15)
+  cnpj      String    @unique @db.VarChar(18)
+  telefone  String    @db.VarChar(17)
   email     String    @unique @db.VarChar(60)
   categoria String   @db.VarChar(60)
   foto      String?   @db.VarChar(255)
