@@ -9,10 +9,11 @@ export async function createFornecedor(app: FastifyInstance) {
       email: z.string().email(),
       cnpj: z.string(),
       telefone: z.string(),
+      categoria: z.string(),
       foto: z.string().optional(),
     });
 
-    const { nome, email, cnpj, telefone, foto } = criarFornecedorBody.parse(request.body);
+    const { nome, email, cnpj, telefone, foto, categoria } = criarFornecedorBody.parse(request.body);
 
     if (!nome || !email || !cnpj || !telefone) {
       reply.status(400).send({ mensagem: "Por favor, Prencheer todo os campos" });
@@ -26,6 +27,7 @@ export async function createFornecedor(app: FastifyInstance) {
         cnpj: cnpj,
         telefone: telefone,
         foto: foto,
+        categoria: categoria
       },
     });
     return reply.status(201).send(fornecedor);
