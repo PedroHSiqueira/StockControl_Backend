@@ -9,13 +9,14 @@ export async function createProduto(app: FastifyInstance) {
       descricao: z.string(),
       preco: z.number(),
       quantidade: z.number(),
+      quantidadeMin: z.number().optional(),
       foto: z.string().optional(),
       categoriaId: z.string().optional(),
       fornecedorId: z.string().optional(),
       empresaId: z.string().optional(),
     });
 
-    const { nome, descricao, preco, quantidade, foto, categoriaId, fornecedorId, empresaId } = criarProdutoBody.parse(request.body);
+    const { nome, descricao, preco, quantidade, quantidadeMin, foto, categoriaId, fornecedorId, empresaId } = criarProdutoBody.parse(request.body);
 
     if (!nome || !descricao || !preco || !quantidade) {
       reply.status(400).send({ mensagem: "Preencha todos os campos" });
@@ -28,6 +29,7 @@ export async function createProduto(app: FastifyInstance) {
         descricao: descricao,
         preco: preco,
         quantidade: quantidade,
+        quantidadeMin: quantidadeMin,
         foto: foto,
         categoriaId: categoriaId,
         fornecedorId: fornecedorId,

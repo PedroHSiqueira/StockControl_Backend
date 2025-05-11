@@ -34,7 +34,7 @@ model Fornecedor {
   cnpj      String    @unique @db.VarChar(18)
   telefone  String    @db.VarChar(17)
   email     String    @unique @db.VarChar(60)
-  categoria String   @db.VarChar(60)
+  categoria String    @db.VarChar(60)
   foto      String?   @db.VarChar(255)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -64,20 +64,21 @@ model Empresa {
 }
 
 model Produto {
-  id           Int         @id @default(autoincrement())
-  nome         String      @db.VarChar(60)
-  descricao    String      @db.VarChar(255)
-  preco        Float
-  quantidade   Int
-  foto         String?     @db.VarChar(255)
-  fornecedor   Fornecedor? @relation(fields: [fornecedorId], references: [id])
-  fornecedorId String?     @db.VarChar(36)
-  categoria    categoria?  @relation(fields: [categoriaId], references: [id])
-  categoriaId  String?     @db.VarChar(36)
-  empresa      Empresa?    @relation(fields: [empresaId], references: [id])
-  empresaId    String?     @db.VarChar(36)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  id            Int         @id @default(autoincrement())
+  nome          String      @db.VarChar(60)
+  descricao     String      @db.VarChar(255)
+  preco         Float
+  quantidade    Int
+  quantidadeMin Int        @default(0)
+  foto          String?     @db.VarChar(255)
+  fornecedor    Fornecedor? @relation(fields: [fornecedorId], references: [id])
+  fornecedorId  String?     @db.VarChar(36)
+  categoria     categoria?  @relation(fields: [categoriaId], references: [id])
+  categoriaId   String?     @db.VarChar(36)
+  empresa       Empresa?    @relation(fields: [empresaId], references: [id])
+  empresaId     String?     @db.VarChar(36)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
   @@map("produtos")
 }

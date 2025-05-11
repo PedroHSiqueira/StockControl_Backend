@@ -9,6 +9,7 @@ export async function updateProduto(app: FastifyInstance) {
       descricao: z.string(),
       preco: z.number(),
       quantidade: z.number(),
+      quantidadeMin: z.number().optional(),
       foto: z.string().optional(),
       categoriaId: z.string().optional(),
       fornecedorId: z.string().optional(),
@@ -16,7 +17,7 @@ export async function updateProduto(app: FastifyInstance) {
     });
 
     const { id } = request.params as { id: number };
-    const { nome, descricao, preco, quantidade, foto, categoriaId, fornecedorId, empresaId } = updateProdutosBody.parse(request.body);
+    const { nome, descricao, preco, quantidade, quantidadeMin, foto, categoriaId, fornecedorId, empresaId } = updateProdutosBody.parse(request.body);
 
     const fornecedor = await prisma.produto.update({
       where: {
@@ -27,6 +28,7 @@ export async function updateProduto(app: FastifyInstance) {
         descricao: descricao,
         preco: preco,
         quantidade: quantidade,
+        quantidadeMin: quantidadeMin,
         foto: foto,
         categoriaId: categoriaId,
         fornecedorId: fornecedorId,
