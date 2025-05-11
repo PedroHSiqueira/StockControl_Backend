@@ -42,11 +42,11 @@ app.register(fastifyCors, {
 });
 
 app.register(fastifyMultipart, {
+  attachFieldsToBody: true,
   limits: {
     fileSize: 5 * 1024 * 1024, 
-    fields: 10 
-  },
-  attachFieldsToBody: false 
+    files: 1
+  }
 });
 // Rotas de Usuarios
 app.register(createUser);

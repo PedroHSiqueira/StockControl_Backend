@@ -9,43 +9,29 @@ const pump = promisify(pipeline);
 export async function createProduto(app: FastifyInstance) {
   app.post("/produtos", async (request: FastifyRequest, reply) => {
     try {
-      const data = await request.file();
-
-      if (!data) {
-        return reply.status(400).send({ mensagem: "Nenhum dado recebido" });
+      if (!request.body) {
+        return reply.status(400).send({ mensagem: "Corpo da requisição inválido" });
       }
 
-      const getFieldValue = (fieldName: string): string | undefined => {
-        const field = data.fields[fieldName];
-
+      const body = request.body as any;
+      
+      const getValue = (field: any): string | undefined => {
         if (!field) return undefined;
-
-        if (Array.isArray(field)) {
-          const firstField = field[0];
-          if ('value' in firstField) {
-            return firstField.value as string;
-          }
-          return undefined;
-        }
-
-        if ('value' in field) {
-          return field.value as string;
-        }
-
-        return undefined;
+        if (Array.isArray(field)) return field[0].value;
+        return field.value;
       };
 
+      const nome = getValue(body.nome);
+      const descricao = getValue(body.descricao);
+      const precoStr = getValue(body.preco);
+      const quantidadeStr = getValue(body.quantidade);
+      const quantidadeMinStr = getValue(body.quantidadeMin);
+      const categoriaId = getValue(body.categoriaId);
+      const fornecedorId = getValue(body.fornecedorId);
+      const empresaId = getValue(body.empresaId);
+      const file = body.foto?.[0];
 
-      const nome = getFieldValue('nome');
-      const descricao = getFieldValue('descricao');
-      const precoStr = getFieldValue('preco');
-      const quantidadeStr = getFieldValue('quantidade');
-      const quantidadeMinStr = getFieldValue('quantidadeMin');
-      const categoriaId = getFieldValue('categoriaId');
-      const fornecedorId = getFieldValue('fornecedorId');
-      const empresaId = getFieldValue('empresaId');
-
-      if (!nome || !descricao || !precoStr || !quantidadeStr) {
+      if (!nome || !descricao || !precoStr || !quantidadeStr || !empresaId) {
         return reply.status(400).send({ mensagem: "Campos obrigatórios faltando" });
       }
 
@@ -53,26 +39,23 @@ export async function createProduto(app: FastifyInstance) {
       const quantidade = parseInt(quantidadeStr);
       const quantidadeMin = quantidadeMinStr ? parseInt(quantidadeMinStr) : null;
 
-      if (isNaN(preco) || isNaN(quantidade) || (quantidadeMinStr && (quantidadeMin === null || isNaN(quantidadeMin)))) {
-        return reply.status(400).send({ mensagem: "Preço, quantidade ou quantidade mínima inválidos" });
+      if (isNaN(preco) || isNaN(quantidade) || (quantidadeMinStr && isNaN(parseInt(quantidadeMinStr)))) {
+        return reply.status(400).send({ mensagem: "Valores numéricos inválidos" });
       }
 
       let fotoUrl = '';
 
-      if (data.file) {
+      if (file?.data) {
         const result = await new Promise((resolve, reject) => {
           const uploadStream = cloudinary.uploader.upload_stream(
             { resource_type: "auto" },
             (error, result) => {
-              if (error) {
-                reject(error);
-              } else {
-                resolve(result);
-              }
+              if (error) reject(error);
+              else resolve(result);
             }
           );
 
-          pump(data.file, uploadStream).catch(reject);
+          pump(file.data, uploadStream).catch(reject);
         });
 
         fotoUrl = (result as any)?.secure_url || '';
@@ -85,10 +68,10 @@ export async function createProduto(app: FastifyInstance) {
           preco,
           quantidade,
           quantidadeMin: quantidadeMin ?? undefined,
-          foto: fotoUrl,
+          foto: fotoUrl || undefined, 
           categoriaId: categoriaId || null,
           fornecedorId: fornecedorId || null,
-          empresaId: empresaId || null,
+          empresaId,
         },
       });
 

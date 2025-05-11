@@ -1,41 +1,117 @@
-import { FastifyInstance } from "fastify";
-import { z } from "zod";
+import { FastifyInstance, FastifyRequest } from "fastify";
 import { prisma } from "../../lib/prisma";
+import cloudinary from '../../config/cloudinaryConfig';
+import { pipeline } from 'stream';
+import { promisify } from 'util';
+
+const pump = promisify(pipeline);
 
 export async function updateProduto(app: FastifyInstance) {
-  app.put("/produtos/:id", async (request, reply) => {
-    const updateProdutosBody = z.object({
-      nome: z.string(),
-      descricao: z.string(),
-      preco: z.number(),
-      quantidade: z.number(),
-      quantidadeMin: z.number().optional(),
-      foto: z.string().optional(),
-      categoriaId: z.string().optional(),
-      fornecedorId: z.string().optional(),
-      empresaId: z.string().optional()
-    });
 
-    const { id } = request.params as { id: number };
-    const { nome, descricao, preco, quantidade, quantidadeMin, foto, categoriaId, fornecedorId, empresaId } = updateProdutosBody.parse(request.body);
 
-    const fornecedor = await prisma.produto.update({
-      where: {
-        id: Number(id),
-      },
-      data: {
-        nome: nome,
-        descricao: descricao,
-        preco: preco,
-        quantidade: quantidade,
-        quantidadeMin: quantidadeMin,
-        foto: foto,
-        categoriaId: categoriaId,
-        fornecedorId: fornecedorId,
-        empresaId: empresaId
-      },
-    });
+  app.put("/produtos/:id", async (request: FastifyRequest, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      
+      if (!request.body) {
+        return reply.status(400).send({ mensagem: "Corpo da requisição inválido" });
+      }
 
-    reply.send(fornecedor);
+      const body = request.body as any;
+      
+      const getValue = (field: any): string | undefined => {
+        if (!field) return undefined;
+        if (Array.isArray(field)) return field[0].value;
+        return field.value;
+      };
+
+      const nome = getValue(body.nome);
+      const descricao = getValue(body.descricao);
+      const precoStr = getValue(body.preco);
+      const quantidadeStr = getValue(body.quantidade);
+      const quantidadeMinStr = getValue(body.quantidadeMin);
+      const categoriaId = getValue(body.categoriaId);
+      const fornecedorId = getValue(body.fornecedorId);
+      const manterFoto = getValue(body.manterFoto) === 'true';
+      const removerFoto = getValue(body.removerFoto) === 'true';
+      const file = body.foto?.[0];
+
+      if (!nome || !descricao || !precoStr || !quantidadeStr) {
+        return reply.status(400).send({ mensagem: "Campos obrigatórios faltando" });
+      }
+
+      const preco = parseFloat(precoStr);
+      const quantidade = parseInt(quantidadeStr);
+      const quantidadeMin = quantidadeMinStr ? parseInt(quantidadeMinStr) : null;
+
+      if (isNaN(preco) || isNaN(quantidade) || (quantidadeMinStr && isNaN(parseInt(quantidadeMinStr)))) {
+        return reply.status(400).send({ mensagem: "Valores numéricos inválidos" });
+      }
+
+      const produtoExistente = await prisma.produto.findUnique({
+        where: { id: Number(id) }
+      });
+
+      if (!produtoExistente) {
+        return reply.status(404).send({ mensagem: "Produto não encontrado" });
+      }
+
+      let fotoUrl = produtoExistente.foto || '';
+
+      if (file?.data) {
+        if (produtoExistente.foto) {
+          const publicId = produtoExistente.foto.split('/').pop()?.split('.')[0];
+          if (publicId) {
+            await cloudinary.uploader.destroy(publicId).catch(console.error);
+          }
+        }
+
+        const result = await new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            { resource_type: "auto" },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+
+          pump(file.data, uploadStream).catch(reject);
+        });
+
+        fotoUrl = (result as any)?.secure_url || '';
+      } else if (removerFoto) {
+        if (produtoExistente.foto) {
+          const publicId = produtoExistente.foto.split('/').pop()?.split('.')[0];
+          if (publicId) {
+            await cloudinary.uploader.destroy(publicId).catch(console.error);
+          }
+        }
+        fotoUrl = '';
+      } else if (!manterFoto && !produtoExistente.foto) {
+        fotoUrl = '';
+      }
+
+      const produtoAtualizado = await prisma.produto.update({
+        where: { id: Number(id) },
+        data: {
+          nome,
+          descricao,
+          preco,
+          quantidade,
+          quantidadeMin: quantidadeMin ?? undefined,
+          foto: fotoUrl || undefined,
+          categoriaId: categoriaId || null,
+          fornecedorId: fornecedorId || null,
+        },
+      });
+
+      return reply.status(200).send(produtoAtualizado);
+    } catch (error) {
+      console.error("Erro ao atualizar produto:", error);
+      return reply.status(500).send({ 
+        mensagem: "Erro interno no servidor",
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
+    }
   });
 }
