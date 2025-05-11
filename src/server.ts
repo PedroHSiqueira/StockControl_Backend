@@ -93,7 +93,7 @@ app.register(updateConvite);
 //Rotas Login
 app.register(loginUser);
 
-
+//fim das rotas
 app.get("/", async (request, reply) => {
   return reply.status(200).send({ mensagem: "API Fastfy: StockControl" });
 });

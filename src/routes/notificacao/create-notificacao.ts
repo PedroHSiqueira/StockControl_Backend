@@ -8,12 +8,12 @@ export async function createNotificacao(app: FastifyInstance) {
       titulo: z.string().min(1, "Título é obrigatório"),
       descricao: z.string().min(1, "Descrição é obrigatória"),
       lida: z.boolean().default(false),
-      usuarioId: z.string().uuid("ID de usuário inválido"), 
-      nomeRemetente: z.string().min(1, "Nome do remetente é obrigatório") 
+      usuarioId: z.string().uuid("ID de usuário inválido"),
+      nomeRemetente: z.string().min(1, "Nome do remetente é obrigatório")
     });
 
 
-    
+
     const { titulo, descricao, lida, usuarioId, nomeRemetente } = criarNotificacaoBody.parse(request.body);
 
     if (!titulo || !descricao || !usuarioId || !nomeRemetente) {
