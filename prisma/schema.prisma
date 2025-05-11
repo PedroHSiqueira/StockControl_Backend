@@ -63,6 +63,7 @@ model Empresa {
   @@map("empresas")
 }
 
+
 model Produto {
   id            Int         @id @default(autoincrement())
   nome          String      @db.VarChar(60)
@@ -133,3 +134,9 @@ enum StatusConvite {
   ACEITO
   RECUSADO
 }
+
+enum Medidas {
+  UNIDADE
+  LITRO
+  KILO
+  }

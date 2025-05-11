@@ -1,5 +1,11 @@
 -- CreateEnum
-CREATE TYPE "TipoUsuario" AS ENUM ('ADMIN', 'CLIENTE', 'PROPRIETARIO');
+CREATE TYPE "TipoUsuario" AS ENUM ('ADMIN', 'FUNCIONARIO', 'PROPRIETARIO');
+
+-- CreateEnum
+CREATE TYPE "StatusConvite" AS ENUM ('PENDENTE', 'ACEITO', 'RECUSADO');
+
+-- CreateEnum
+CREATE TYPE "Medidas" AS ENUM ('UNIDADE', 'LITRO', 'KILO');
 
 -- CreateTable
 CREATE TABLE "usuarios" (
@@ -19,9 +25,11 @@ CREATE TABLE "usuarios" (
 CREATE TABLE "fornecedores" (
     "id" VARCHAR(36) NOT NULL,
     "nome" VARCHAR(60) NOT NULL,
-    "cnpj" VARCHAR(14) NOT NULL,
-    "telefone" VARCHAR(15) NOT NULL,
+    "cnpj" VARCHAR(18) NOT NULL,
+    "telefone" VARCHAR(17) NOT NULL,
     "email" VARCHAR(60) NOT NULL,
+    "categoria" VARCHAR(60) NOT NULL,
+    "foto" VARCHAR(255),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -53,9 +61,11 @@ CREATE TABLE "produtos" (
     "descricao" VARCHAR(255) NOT NULL,
     "preco" DOUBLE PRECISION NOT NULL,
     "quantidade" INTEGER NOT NULL,
+    "quantidadeMin" INTEGER NOT NULL DEFAULT 0,
     "foto" VARCHAR(255),
     "fornecedorId" VARCHAR(36),
     "categoriaId" VARCHAR(36),
+    "empresaId" VARCHAR(36),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -80,10 +90,23 @@ CREATE TABLE "notificacoes" (
     "descricao" VARCHAR(255) NOT NULL,
     "lida" BOOLEAN NOT NULL DEFAULT false,
     "usuarioId" VARCHAR(36),
+    "conviteId" VARCHAR(36),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "notificacoes_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "convites" (
+    "id" VARCHAR(36) NOT NULL,
+    "email" VARCHAR(60) NOT NULL,
+    "empresaId" VARCHAR(36) NOT NULL,
+    "status" "StatusConvite" NOT NULL DEFAULT 'PENDENTE',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "convites_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -98,6 +121,9 @@ CREATE UNIQUE INDEX "fornecedores_email_key" ON "fornecedores"("email");
 -- CreateIndex
 CREATE UNIQUE INDEX "empresas_email_key" ON "empresas"("email");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "notificacoes_conviteId_key" ON "notificacoes"("conviteId");
+
 -- AddForeignKey
 ALTER TABLE "usuarios" ADD CONSTRAINT "usuarios_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "empresas"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
@@ -108,4 +134,13 @@ ALTER TABLE "produtos" ADD CONSTRAINT "produtos_fornecedorId_fkey" FOREIGN KEY (
 ALTER TABLE "produtos" ADD CONSTRAINT "produtos_categoriaId_fkey" FOREIGN KEY ("categoriaId") REFERENCES "categorias"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "produtos" ADD CONSTRAINT "produtos_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "empresas"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "notificacoes" ADD CONSTRAINT "notificacoes_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "usuarios"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "notificacoes" ADD CONSTRAINT "notificacoes_conviteId_fkey" FOREIGN KEY ("conviteId") REFERENCES "convites"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "convites" ADD CONSTRAINT "convites_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "empresas"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

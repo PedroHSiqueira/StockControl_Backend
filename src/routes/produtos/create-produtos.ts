@@ -35,12 +35,7 @@ export async function createProduto(app: FastifyInstance) {
         return undefined;
       };
 
-      console.log('Estrutura completa dos campos:', Object.keys(data.fields).map(key => ({
-        key,
-        type: Array.isArray(data.fields[key]) ? 'array' : 'object',
-        value: getFieldValue(key)
-      })));
-      
+
       const nome = getFieldValue('nome');
       const descricao = getFieldValue('descricao');
       const precoStr = getFieldValue('preco');
