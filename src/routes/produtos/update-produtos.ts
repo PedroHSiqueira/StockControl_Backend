@@ -10,49 +10,41 @@ export async function updateProduto(app: FastifyInstance) {
   app.put("/produtos/:id", async (request: FastifyRequest, reply) => {
     try {
       const { id } = request.params as { id: string };
-      const data = await request.file();
+      const parts = request.parts();
+      const fields: Record<string, any> = {};
+      let fotoFile: any = null;
 
-      if (!data) {
-        return reply.status(400).send({ mensagem: "Nenhum dado recebido" });
+      for await (const part of parts) {
+        if (part.type === 'file' && part.fieldname === 'foto') {
+          fotoFile = part;
+        } else if (part.type === 'field') {
+          fields[part.fieldname] = part.value;
+        }
       }
 
-      const getFieldValue = (fieldName: string): string | undefined => {
-        const field = data.fields[fieldName];
-        
-        if (!field) return undefined;
-        
-        if (Array.isArray(field)) {
-          const firstField = field[0];
-          if ('value' in firstField) {
-            return firstField.value as string;
+      const nome = fields['nome'] || '';
+      const descricao = fields['descricao'] || '';
+      const precoStr = fields['preco'] || '0';
+      const quantidadeStr = fields['quantidade'] || '0';
+      const quantidadeMinStr = fields['quantidadeMin'];
+      const categoriaId = fields['categoriaId'];
+      const fornecedorId = fields['fornecedorId'];
+
+      if (!nome.trim() || !descricao.trim()) {
+        return reply.status(400).send({
+          mensagem: "Campos obrigatórios faltando",
+          camposRecebidos: {
+            nome: !!nome,
+            descricao: !!descricao
           }
-          return undefined;
-        }
-        
-        if ('value' in field) {
-          return field.value as string;
-        }
-        
-        return undefined;
-      };
-
-      const nome = getFieldValue('nome');
-      const descricao = getFieldValue('descricao');
-      const precoStr = getFieldValue('preco');
-      const quantidadeStr = getFieldValue('quantidade');
-      const quantidadeMinStr = getFieldValue('quantidadeMin');
-      const categoriaId = getFieldValue('categoriaId');
-      const fornecedorId = getFieldValue('fornecedorId');
-
-      if (!nome || !descricao || !precoStr || !quantidadeStr) {
-        return reply.status(400).send({ mensagem: "Campos obrigatórios faltando" });
+        });
       }
 
-      const preco = parseFloat(precoStr);
-      const quantidade = parseInt(quantidadeStr);
+      const preco = parseFloat(precoStr.replace(',', '.')) || 0;
+      const quantidade = parseInt(quantidadeStr) || 0;
       const quantidadeMin = quantidadeMinStr ? parseInt(quantidadeMinStr) : null;
 
-      if (isNaN(preco) || isNaN(quantidade) || (quantidadeMinStr && (quantidadeMin === null || isNaN(quantidadeMin)))) {
+      if (isNaN(preco) || isNaN(quantidade) || (quantidadeMinStr && isNaN(quantidadeMin as number))) {
         return reply.status(400).send({ mensagem: "Preço, quantidade ou quantidade mínima inválidos" });
       }
 
@@ -64,9 +56,9 @@ export async function updateProduto(app: FastifyInstance) {
         return reply.status(404).send({ mensagem: "Produto não encontrado" });
       }
 
-      let fotoUrl = produtoExistente.foto || '';
+      let fotoUrl = produtoExistente.foto || null;
 
-      if (data.file && data.file.bytesRead > 0) { 
+      if (fotoFile && fotoFile.file && fotoFile.file.readable) {
         if (produtoExistente.foto) {
           const publicId = produtoExistente.foto.split('/').pop()?.split('.')[0];
           if (publicId) {
@@ -79,24 +71,28 @@ export async function updateProduto(app: FastifyInstance) {
             { resource_type: "auto" },
             (error, result) => {
               if (error) {
-                reject(error);
+                console.error("Erro no upload:", error);
+                resolve(null);
               } else {
                 resolve(result);
               }
             }
           );
 
-          pump(data.file, uploadStream).catch(reject);
+          pump(fotoFile.file, uploadStream).catch(err => {
+            console.error("Erro no pipeline:", err);
+            resolve(null);
+          });
         });
 
-        fotoUrl = (result as any)?.secure_url || '';
+        fotoUrl = (result as any)?.secure_url || null;
       }
 
       const produtoAtualizado = await prisma.produto.update({
         where: { id: Number(id) },
         data: {
-          nome,
-          descricao,
+          nome: nome.trim(),
+          descricao: descricao.trim(),
           preco,
           quantidade,
           quantidadeMin: quantidadeMin ?? undefined,
@@ -109,7 +105,7 @@ export async function updateProduto(app: FastifyInstance) {
       return reply.status(200).send(produtoAtualizado);
     } catch (error) {
       console.error("Erro ao atualizar produto:", error);
-      return reply.status(500).send({ 
+      return reply.status(500).send({
         mensagem: "Erro interno no servidor",
         error: error instanceof Error ? error.message : 'Erro desconhecido'
       });

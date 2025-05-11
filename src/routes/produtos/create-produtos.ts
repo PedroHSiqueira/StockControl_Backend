@@ -9,41 +9,29 @@ const pump = promisify(pipeline);
 export async function createProduto(app: FastifyInstance) {
   app.post("/produtos", async (request: FastifyRequest, reply) => {
     try {
-      const data = await request.file();
+      const parts = request.parts();
+      const fields: Record<string, any> = {};
+      let fotoFile: any = null;
 
-      if (!data) {
-        return reply.status(400).send({ mensagem: "Nenhum dado recebido" });
+      for await (const part of parts) {
+        if (part.type === 'file' && part.fieldname === 'foto') {
+          fotoFile = part;
+        } else if (part.type === 'field') {
+          fields[part.fieldname] = part.value;
+        }
       }
 
-      const getFieldValue = (fieldName: string): string | undefined => {
-        const field = data.fields[fieldName];
-        if (!field) return undefined;
-        
-        if (!Array.isArray(field) && field.type === 'file') return undefined;
-        
-        if (Array.isArray(field)) {
-          return typeof field[0] === 'string' ? field[0] : undefined;
-        }
-        
-        if (typeof field.value === 'string' && field.value.trim() === '') {
-          return undefined;
-        }
-        return field.value?.toString() || undefined;
-      };
-
-      console.log("Fields received:", data.fields);
-
-      const nome = getFieldValue('nome') || '';
-      const descricao = getFieldValue('descricao') || '';
-      const precoStr = getFieldValue('preco') || '0';
-      const quantidadeStr = getFieldValue('quantidade') || '0';
-      const quantidadeMinStr = getFieldValue('quantidadeMin');
-      const categoriaId = getFieldValue('categoriaId');
-      const fornecedorId = getFieldValue('fornecedorId');
-      const empresaId = getFieldValue('empresaId');
+      const nome = fields['nome'] || '';
+      const descricao = fields['descricao'] || '';
+      const precoStr = fields['preco'] || '0';
+      const quantidadeStr = fields['quantidade'] || '0';
+      const quantidadeMinStr = fields['quantidadeMin'];
+      const categoriaId = fields['categoriaId'];
+      const fornecedorId = fields['fornecedorId'];
+      const empresaId = fields['empresaId'];
 
       if (!nome.trim() || !descricao.trim() || !empresaId) {
-        return reply.status(400).send({ 
+        return reply.status(400).send({
           mensagem: "Campos obrigatórios faltando",
           camposRecebidos: {
             nome: !!nome,
@@ -60,30 +48,37 @@ export async function createProduto(app: FastifyInstance) {
       if (isNaN(preco)) {
         return reply.status(400).send({ mensagem: "Valor de preço inválido" });
       }
-      
+
       if (isNaN(quantidade)) {
         return reply.status(400).send({ mensagem: "Valor de quantidade inválido" });
       }
-      
+
       if (quantidadeMinStr && isNaN(quantidadeMin as number)) {
         return reply.status(400).send({ mensagem: "Valor de quantidade mínima inválido" });
       }
 
       let fotoUrl = null;
-      
-      if (data.fields.foto && 'file' in data.fields.foto) {
+
+      if (fotoFile) {
         try {
-          const fileStream = data.fields.foto.file;
           const result = await new Promise((resolve, reject) => {
             const uploadStream = cloudinary.uploader.upload_stream(
               { resource_type: "auto" },
               (error, result) => {
-                if (error) reject(error);
-                else resolve(result);
+                if (error) {
+                  console.error("Erro no upload:", error);
+                  resolve(null);
+                } else {
+                  resolve(result);
+                }
               }
             );
-            pump(fileStream, uploadStream).catch(reject);
+            pump(fotoFile.file, uploadStream).catch(err => {
+              console.error("Erro no pipeline:", err);
+              resolve(null);
+            });
           });
+
           fotoUrl = (result as any)?.secure_url || null;
         } catch (uploadError) {
           console.error("Erro no upload da imagem:", uploadError);
