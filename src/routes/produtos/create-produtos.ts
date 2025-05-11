@@ -1,8 +1,8 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
 import { prisma } from "../../lib/prisma";
-import cloudinary from '../../config/cloudinaryConfig';
-import { pipeline } from 'stream';
-import { promisify } from 'util';
+import cloudinary from "../../config/cloudinaryConfig";
+import { pipeline } from "stream";
+import { promisify } from "util";
 
 const pump = promisify(pipeline);
 
@@ -14,7 +14,7 @@ export async function createProduto(app: FastifyInstance) {
       }
 
       const body = request.body as any;
-      
+
       const getValue = (field: any): string | undefined => {
         if (!field) return undefined;
         if (Array.isArray(field)) return field[0].value;
@@ -43,22 +43,19 @@ export async function createProduto(app: FastifyInstance) {
         return reply.status(400).send({ mensagem: "Valores numéricos inválidos" });
       }
 
-      let fotoUrl = '';
+      let fotoUrl = "";
 
       if (file?.data) {
         const result = await new Promise((resolve, reject) => {
-          const uploadStream = cloudinary.uploader.upload_stream(
-            { resource_type: "auto" },
-            (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
-            }
-          );
+          const uploadStream = cloudinary.uploader.upload_stream({ resource_type: "auto" }, (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          });
 
           pump(file.data, uploadStream).catch(reject);
         });
 
-        fotoUrl = (result as any)?.secure_url || '';
+        fotoUrl = (result as any)?.secure_url || "";
       }
 
       const produto = await prisma.produto.create({
@@ -68,7 +65,7 @@ export async function createProduto(app: FastifyInstance) {
           preco,
           quantidade,
           quantidadeMin: quantidadeMin ?? undefined,
-          foto: fotoUrl || undefined, 
+          foto: fotoUrl || undefined,
           categoriaId: categoriaId || null,
           fornecedorId: fornecedorId || null,
           empresaId,
@@ -80,7 +77,7 @@ export async function createProduto(app: FastifyInstance) {
       console.error("Erro ao criar produto:", error);
       return reply.status(500).send({
         mensagem: "Erro interno no servidor",
-        error: error instanceof Error ? error.message : 'Erro desconhecido'
+        error: error instanceof Error ? error.message : "Erro desconhecido",
       });
     }
   });
