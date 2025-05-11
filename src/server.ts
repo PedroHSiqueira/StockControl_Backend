@@ -42,7 +42,7 @@ app.register(fastifyCors, {
 });
 
 app.register(fastifyMultipart, {
-  attachFieldsToBody: true,
+  attachFieldsToBody: false,
   limits: {
     fileSize: 5 * 1024 * 1024, 
     files: 1

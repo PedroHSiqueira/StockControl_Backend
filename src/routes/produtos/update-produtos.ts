@@ -7,34 +7,42 @@ import { promisify } from 'util';
 const pump = promisify(pipeline);
 
 export async function updateProduto(app: FastifyInstance) {
-
-
   app.put("/produtos/:id", async (request: FastifyRequest, reply) => {
     try {
       const { id } = request.params as { id: string };
-      
-      if (!request.body) {
-        return reply.status(400).send({ mensagem: "Corpo da requisição inválido" });
+      const data = await request.file();
+
+      if (!data) {
+        return reply.status(400).send({ mensagem: "Nenhum dado recebido" });
       }
 
-      const body = request.body as any;
-      
-      const getValue = (field: any): string | undefined => {
+      const getFieldValue = (fieldName: string): string | undefined => {
+        const field = data.fields[fieldName];
+        
         if (!field) return undefined;
-        if (Array.isArray(field)) return field[0].value;
-        return field.value;
+        
+        if (Array.isArray(field)) {
+          const firstField = field[0];
+          if ('value' in firstField) {
+            return firstField.value as string;
+          }
+          return undefined;
+        }
+        
+        if ('value' in field) {
+          return field.value as string;
+        }
+        
+        return undefined;
       };
 
-      const nome = getValue(body.nome);
-      const descricao = getValue(body.descricao);
-      const precoStr = getValue(body.preco);
-      const quantidadeStr = getValue(body.quantidade);
-      const quantidadeMinStr = getValue(body.quantidadeMin);
-      const categoriaId = getValue(body.categoriaId);
-      const fornecedorId = getValue(body.fornecedorId);
-      const manterFoto = getValue(body.manterFoto) === 'true';
-      const removerFoto = getValue(body.removerFoto) === 'true';
-      const file = body.foto?.[0];
+      const nome = getFieldValue('nome');
+      const descricao = getFieldValue('descricao');
+      const precoStr = getFieldValue('preco');
+      const quantidadeStr = getFieldValue('quantidade');
+      const quantidadeMinStr = getFieldValue('quantidadeMin');
+      const categoriaId = getFieldValue('categoriaId');
+      const fornecedorId = getFieldValue('fornecedorId');
 
       if (!nome || !descricao || !precoStr || !quantidadeStr) {
         return reply.status(400).send({ mensagem: "Campos obrigatórios faltando" });
@@ -44,8 +52,8 @@ export async function updateProduto(app: FastifyInstance) {
       const quantidade = parseInt(quantidadeStr);
       const quantidadeMin = quantidadeMinStr ? parseInt(quantidadeMinStr) : null;
 
-      if (isNaN(preco) || isNaN(quantidade) || (quantidadeMinStr && isNaN(parseInt(quantidadeMinStr)))) {
-        return reply.status(400).send({ mensagem: "Valores numéricos inválidos" });
+      if (isNaN(preco) || isNaN(quantidade) || (quantidadeMinStr && (quantidadeMin === null || isNaN(quantidadeMin)))) {
+        return reply.status(400).send({ mensagem: "Preço, quantidade ou quantidade mínima inválidos" });
       }
 
       const produtoExistente = await prisma.produto.findUnique({
@@ -58,7 +66,7 @@ export async function updateProduto(app: FastifyInstance) {
 
       let fotoUrl = produtoExistente.foto || '';
 
-      if (file?.data) {
+      if (data.file && data.file.bytesRead > 0) { 
         if (produtoExistente.foto) {
           const publicId = produtoExistente.foto.split('/').pop()?.split('.')[0];
           if (publicId) {
@@ -70,25 +78,18 @@ export async function updateProduto(app: FastifyInstance) {
           const uploadStream = cloudinary.uploader.upload_stream(
             { resource_type: "auto" },
             (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
+              if (error) {
+                reject(error);
+              } else {
+                resolve(result);
+              }
             }
           );
 
-          pump(file.data, uploadStream).catch(reject);
+          pump(data.file, uploadStream).catch(reject);
         });
 
         fotoUrl = (result as any)?.secure_url || '';
-      } else if (removerFoto) {
-        if (produtoExistente.foto) {
-          const publicId = produtoExistente.foto.split('/').pop()?.split('.')[0];
-          if (publicId) {
-            await cloudinary.uploader.destroy(publicId).catch(console.error);
-          }
-        }
-        fotoUrl = '';
-      } else if (!manterFoto && !produtoExistente.foto) {
-        fotoUrl = '';
       }
 
       const produtoAtualizado = await prisma.produto.update({
@@ -99,7 +100,7 @@ export async function updateProduto(app: FastifyInstance) {
           preco,
           quantidade,
           quantidadeMin: quantidadeMin ?? undefined,
-          foto: fotoUrl || undefined,
+          foto: fotoUrl,
           categoriaId: categoriaId || null,
           fornecedorId: fornecedorId || null,
         },
