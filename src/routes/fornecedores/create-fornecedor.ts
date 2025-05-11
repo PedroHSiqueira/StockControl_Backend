@@ -27,7 +27,14 @@ export async function createFornecedor(app: FastifyInstance) {
         cnpj: cnpj,
         telefone: telefone,
         foto: foto,
-        categoria: categoria
+        categoria: categoria,
+      },
+    });
+
+    await prisma.logs.create({
+      data: {
+      descricao: `Fornecedor criado: ${fornecedor.nome}`,
+      tipo: "CRIACAO",
       },
     });
     return reply.status(201).send(fornecedor);

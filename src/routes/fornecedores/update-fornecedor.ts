@@ -30,6 +30,12 @@ export async function updateFornecedor(app: FastifyInstance) {
       },
     });
 
+     await prisma.logs.create({
+          data: {
+          descricao: `Fornecedor Atualizado: ${fornecedor.nome}`,
+          tipo: "ATUALIZACAO",
+          },
+        });
     reply.send(fornecedor);
   });
 }

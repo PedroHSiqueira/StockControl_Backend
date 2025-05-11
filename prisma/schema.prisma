@@ -59,10 +59,8 @@ model Empresa {
   Convite   Convite[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-
   @@map("empresas")
 }
-
 
 model Produto {
   id            Int         @id @default(autoincrement())
@@ -70,7 +68,7 @@ model Produto {
   descricao     String      @db.VarChar(255)
   preco         Float
   quantidade    Int
-  quantidadeMin Int        @default(0)
+  quantidadeMin Int         @default(0)
   foto          String?     @db.VarChar(255)
   fornecedor    Fornecedor? @relation(fields: [fornecedorId], references: [id])
   fornecedorId  String?     @db.VarChar(36)
@@ -123,6 +121,15 @@ model Convite {
   @@map("convites")
 }
 
+model Logs {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  descricao String   @db.VarChar(255)
+  tipo      TipoLog  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@map("logs")
+}
+
 enum TipoUsuario {
   ADMIN
   FUNCIONARIO
@@ -135,8 +142,14 @@ enum StatusConvite {
   RECUSADO
 }
 
+enum TipoLog {
+  CRIACAO
+  ATUALIZACAO
+  EXCLUSAO
+}
+
 enum Medidas {
   UNIDADE
   LITRO
   KILO
-  }
+}

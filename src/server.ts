@@ -30,6 +30,7 @@ import { getConvite } from "./routes/convites/get-convites";
 import { deleteConvite } from "./routes/convites/delete-convites";
 import { updateConvite } from "./routes/convites/update-convites";
 import fastifyMultipart from '@fastify/multipart';
+import { getLogs } from "./routes/logs/get-logs";
 
 const app = fastify();
 
@@ -92,6 +93,9 @@ app.register(updateConvite);
 
 //Rotas Login
 app.register(loginUser);
+
+// Rota Logs
+app.register(getLogs);
 
 
 app.get("/", async (request, reply) => {
