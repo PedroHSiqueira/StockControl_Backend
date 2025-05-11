@@ -10,16 +10,16 @@ export async function createProduto(app: FastifyInstance) {
   app.post("/produtos", async (request: FastifyRequest, reply) => {
     try {
       const data = await request.file();
-      
+
       if (!data) {
         return reply.status(400).send({ mensagem: "Nenhum dado recebido" });
       }
 
       const getFieldValue = (fieldName: string): string | undefined => {
         const field = data.fields[fieldName];
-        
+
         if (!field) return undefined;
-        
+
         if (Array.isArray(field)) {
           const firstField = field[0];
           if ('value' in firstField) {
@@ -27,11 +27,11 @@ export async function createProduto(app: FastifyInstance) {
           }
           return undefined;
         }
-        
+
         if ('value' in field) {
           return field.value as string;
         }
-        
+
         return undefined;
       };
 
@@ -40,7 +40,7 @@ export async function createProduto(app: FastifyInstance) {
       const descricao = getFieldValue('descricao');
       const precoStr = getFieldValue('preco');
       const quantidadeStr = getFieldValue('quantidade');
-      const quantidadeMinStr = getFieldValue('quantidadeMin'); 
+      const quantidadeMinStr = getFieldValue('quantidadeMin');
       const categoriaId = getFieldValue('categoriaId');
       const fornecedorId = getFieldValue('fornecedorId');
       const empresaId = getFieldValue('empresaId');
@@ -84,7 +84,7 @@ export async function createProduto(app: FastifyInstance) {
           descricao,
           preco,
           quantidade,
-          quantidadeMin: quantidadeMin ?? undefined, 
+          quantidadeMin: quantidadeMin ?? undefined,
           foto: fotoUrl,
           categoriaId: categoriaId || null,
           fornecedorId: fornecedorId || null,
@@ -95,7 +95,7 @@ export async function createProduto(app: FastifyInstance) {
       return reply.status(201).send(produto);
     } catch (error) {
       console.error("Erro ao criar produto:", error);
-      return reply.status(500).send({ 
+      return reply.status(500).send({
         mensagem: "Erro interno no servidor",
         error: error instanceof Error ? error.message : 'Erro desconhecido'
       });
