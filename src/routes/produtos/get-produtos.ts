@@ -14,13 +14,22 @@ export async function getProduto(app: FastifyInstance) {
     reply.send(fornecedor);
   });
 
-  app.get("/produtos/contagem", async (request, reply) => {
+  app.get("/produtos/contagem/:empresaId", async (request, reply) => {
+    const { empresaId } = request.params as { empresaId: string };
+
     const produtos = await prisma.produto.findMany({
+      where: {
+        empresaId: empresaId,
+      },
       select: {
         quantidade: true,
         preco: true,
       },
     });
+
+    if (!produtos.length) {
+      return reply.status(404).send({ message: "Nenhum produto encontrado para a empresa especificada." });
+    }
 
     const contagemQuantidade = produtos.reduce((sum, produto) => sum + (produto.quantidade || 0), 0);
     const contagemPreco = produtos.reduce((sum, produto) => sum + (produto.preco || 0) * (produto.quantidade || 0), 0);
