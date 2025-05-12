@@ -1,66 +1,114 @@
-import { FastifyInstance } from "fastify";
-import { z } from "zod";
+import { FastifyInstance, FastifyRequest } from "fastify";
 import { prisma } from "../../lib/prisma";
+import cloudinary from '../../config/cloudinaryConfig';
+import { pipeline } from 'stream';
+import { promisify } from 'util';
+
+const pump = promisify(pipeline);
 
 export async function createEmpresa(app: FastifyInstance) {
-  app.post("/empresa", async (request, reply) => {
-    const criarEmpresaBody = z.object({
-      nome: z.string().min(1, "Nome é obrigatório"),
-      email: z.string().email("Email inválido"),
-      foto: z.string().optional(),
-      telefone: z.string().optional(),
-      endereco: z.string().optional(),
-      pais: z.string().optional(),
-      estado: z.string().optional(),
-      cidade: z.string().optional(),
-      cep: z.string().optional(),
-    });
+  app.post("/empresa", async (request: FastifyRequest, reply) => {
+    try {
+      const userId = request.headers["user-id"] as string | undefined;
+      
+      if (!userId) {
+        return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+      }
 
-    const userId = request.headers["user-id"] as string | undefined;
+      const parts = request.parts();
+      const fields: Record<string, any> = {};
+      let fotoFile: any = null;
 
-    if (!userId) {
-      return reply.status(401).send({ mensagem: "Usuário não autenticado" });
-    }
+      for await (const part of parts) {
+        if (part.type === 'file' && part.fieldname === 'foto') {
+          fotoFile = part;
+        } else if (part.type === 'field') {
+          fields[part.fieldname] = part.value;
+        }
+      }
 
-    const {
-      nome,
-      email,
-      foto,
-      telefone,
-      endereco,
-      pais,
-      estado,
-      cidade,
-      cep,
-    } = criarEmpresaBody.parse(request.body);
+      const nome = fields['nome'] || '';
+      const email = fields['email'] || '';
+      const telefone = fields['telefone'] || '';
+      const endereco = fields['endereco'] || '';
+      const pais = fields['pais'] || '';
+      const estado = fields['estado'] || '';
+      const cidade = fields['cidade'] || '';
+      const cep = fields['cep'] || '';
 
-    const empresa = await prisma.empresa.create({
-      data: {
-        nome,
-        email,
-        foto,
-        telefone,
-        endereco,
-        pais,
-        estado,
-        cidade,
-        cep,
-        usuario: {
-          connect: {
-            id: userId,
+      if (!nome.trim() || !email.trim()) {
+        return reply.status(400).send({ 
+          mensagem: "Nome e email são obrigatórios",
+          camposRecebidos: {
+            nome: !!nome,
+            email: !!email
+          }
+        });
+      }
+
+      let fotoUrl = null;
+
+      if (fotoFile) {
+        try {
+          const result = await new Promise((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+              { resource_type: "auto" },
+              (error, result) => {
+                if (error) {
+                  console.error("Erro no upload:", error);
+                  resolve(null);
+                } else {
+                  resolve(result);
+                }
+              }
+            );
+            pump(fotoFile.file, uploadStream).catch(err => {
+              console.error("Erro no pipeline:", err);
+              resolve(null);
+            });
+          });
+
+          fotoUrl = (result as any)?.secure_url || null;
+        } catch (uploadError) {
+          console.error("Erro no upload da imagem:", uploadError);
+        }
+      }
+
+      const empresa = await prisma.empresa.create({
+        data: {
+          nome: nome.trim(),
+          email: email.trim(),
+          foto: fotoUrl,
+          telefone: telefone.trim(),
+          endereco: endereco.trim(),
+          pais: pais.trim(),
+          estado: estado.trim(),
+          cidade: cidade.trim(),
+          cep: cep.trim(),
+          usuario: {
+            connect: {
+              id: userId,
+            },
           },
         },
-      },
-    });
+      });
 
-    await prisma.usuario.update({
-      where: { id: userId },
-      data: {
-        empresaId: empresa.id,
-        tipo: "PROPRIETARIO",
-      },
-    });
+      await prisma.usuario.update({
+        where: { id: userId },
+        data: {
+          empresaId: empresa.id,
+          tipo: "PROPRIETARIO",
+        },
+      });
 
-    return reply.status(201).send(empresa);
+      return reply.status(201).send(empresa);
+    } catch (error) {
+      console.error("Erro ao criar empresa:", error);
+      return reply.status(500).send({
+        mensagem: "Erro interno no servidor",
+        error: error instanceof Error ? error.message : 'Erro desconhecido',
+        stack: process.env.NODE_ENV === 'development' && error instanceof Error ? error.stack : undefined
+      });
+    }
   });
 }

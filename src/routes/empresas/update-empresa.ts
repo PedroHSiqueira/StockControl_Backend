@@ -1,30 +1,19 @@
-import { FastifyInstance } from "fastify";
-import { z } from "zod";
+import { FastifyInstance, FastifyRequest } from "fastify";
 import { prisma } from "../../lib/prisma";
+import cloudinary from '../../config/cloudinaryConfig';
+import { pipeline } from 'stream';
+import { promisify } from 'util';
+
+const pump = promisify(pipeline);
 
 export async function updateEmpresa(app: FastifyInstance) {
-  app.put("/empresa/:id/:usuarioId", async (request, reply) => {
+  app.put("/empresa/:id/:usuarioId", async (request: FastifyRequest, reply) => {
     try {
-      const updateEmpresaBody = z.object({
-        nome: z.string().min(1).optional().nullable(),
-        email: z.string().email().optional().nullable(),
-        foto: z.string().optional().nullable(),
-        telefone: z.string().optional().nullable(),
-        endereco: z.string().optional().nullable(),
-        pais: z.string().optional().nullable(),
-        estado: z.string().optional().nullable(),
-        cidade: z.string().optional().nullable(),
-        cep: z.string().optional().nullable(),
-      });
-
       const { id, usuarioId } = request.params as { id: string; usuarioId: string };
-      const data = updateEmpresaBody.parse(request.body);
-
+      
       const usuario = await prisma.usuario.findUnique({
         where: { id: usuarioId },
-        include: {
-          empresa: true,
-        },
+        include: { empresa: true },
       });
 
       if (!usuario || !usuario.empresa) {
@@ -36,36 +25,84 @@ export async function updateEmpresa(app: FastifyInstance) {
       }
 
       if (usuario.tipo === "FUNCIONARIO") {
-        return reply.status(403).send({ mensagem: "Clientes não podem editar dados da empresa" });
+        return reply.status(403).send({ mensagem: "Funcionários não podem editar dados da empresa" });
       }
 
-      if (usuario.tipo === "ADMIN") {
-        if (data.nome !== usuario.empresa.nome || data.email !== usuario.empresa.email) {
-          return reply.status(403).send({ mensagem: "Você não tem permissão para alterar o nome ou email" });
+      const parts = request.parts();
+      const fields: Record<string, any> = {};
+      let fotoFile: any = null;
+
+      for await (const part of parts) {
+        if (part.type === 'file' && part.fieldname === 'foto') {
+          fotoFile = part;
+        } else if (part.type === 'field') {
+          fields[part.fieldname] = part.value === 'null' ? null : part.value;
         }
       }
 
+      if (usuario.tipo === "ADMIN") {
+        if (fields['nome'] && fields['nome'] !== usuario.empresa.nome) {
+          return reply.status(403).send({ mensagem: "ADMIN não pode alterar o nome da empresa" });
+        }
+        if (fields['email'] && fields['email'] !== usuario.empresa.email) {
+          return reply.status(403).send({ mensagem: "ADMIN não pode alterar o email da empresa" });
+        }
+      }
+
+      let fotoUrl = usuario.empresa.foto;
+      if (fotoFile) {
+        try {
+          const result = await new Promise((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+              { resource_type: "auto" },
+              (error, result) => {
+                if (error) {
+                  console.error("Erro no upload:", error);
+                  resolve(null);
+                } else {
+                  resolve(result);
+                }
+              }
+            );
+            pump(fotoFile.file, uploadStream).catch(err => {
+              console.error("Erro no pipeline:", err);
+              resolve(null);
+            });
+          });
+
+          fotoUrl = (result as any)?.secure_url || null;
+        } catch (uploadError) {
+          console.error("Erro no upload da imagem:", uploadError);
+        }
+      } else if (fields['foto'] === null) {
+        fotoUrl = null;
+      }
+
+      const updateData: Record<string, any> = {
+        ...(fields['nome'] !== undefined && { nome: fields['nome']?.trim() }),
+        ...(fields['email'] !== undefined && { email: fields['email']?.trim() }),
+        ...(fotoUrl !== undefined && { foto: fotoUrl }),
+        ...(fields['telefone'] !== undefined && { telefone: fields['telefone']?.trim() }),
+        ...(fields['endereco'] !== undefined && { endereco: fields['endereco']?.trim() }),
+        ...(fields['pais'] !== undefined && { pais: fields['pais']?.trim() }),
+        ...(fields['estado'] !== undefined && { estado: fields['estado']?.trim() }),
+        ...(fields['cidade'] !== undefined && { cidade: fields['cidade']?.trim() }),
+        ...(fields['cep'] !== undefined && { cep: fields['cep']?.trim() }),
+      };
+
       const empresaAtualizada = await prisma.empresa.update({
         where: { id: String(id) },
-        data: {
-          ...(data.nome !== null && { nome: data.nome }),
-          ...(data.email !== null && { email: data.email }),
-          ...(data.foto !== null && { foto: data.foto }),
-          ...(data.telefone !== null && { telefone: data.telefone }),
-          ...(data.endereco !== null && { endereco: data.endereco }),
-          ...(data.pais !== null && { pais: data.pais }),
-          ...(data.estado !== null && { estado: data.estado }),
-          ...(data.cidade !== null && { cidade: data.cidade }),
-          ...(data.cep !== null && { cep: data.cep }),
-        },
+        data: updateData,
       });
 
       return reply.send(empresaAtualizada);
-    } catch (error: any) {
-      console.error("Erro ao atualizar empresa:", error.message);
-      console.error("Detalhes do erro:", error);
-      console.error("→ Body recebido:", request.body);
-      return reply.status(500).send({ mensagem: "Erro interno", detalhe: error.message });
+    } catch (error) {
+      console.error("Erro ao atualizar empresa:", error);
+      return reply.status(500).send({
+        mensagem: "Erro interno no servidor",
+        error: error instanceof Error ? error.message : 'Erro desconhecido',
+        stack: process.env.NODE_ENV === 'development' && error instanceof Error ? error.stack : undefined
+      });
     }
   });
 }
