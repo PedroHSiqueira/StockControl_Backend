@@ -1,8 +1,8 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
 import { prisma } from "../../lib/prisma";
-import cloudinary from '../../config/cloudinaryConfig';
-import { pipeline } from 'stream';
-import { promisify } from 'util';
+import cloudinary from "../../config/cloudinaryConfig";
+import { pipeline } from "stream";
+import { promisify } from "util";
 
 const pump = promisify(pipeline);
 
@@ -14,21 +14,21 @@ export async function createProduto(app: FastifyInstance) {
       let fotoFile: any = null;
 
       for await (const part of parts) {
-        if (part.type === 'file' && part.fieldname === 'foto') {
+        if (part.type === "file" && part.fieldname === "foto") {
           fotoFile = part;
-        } else if (part.type === 'field') {
+        } else if (part.type === "field") {
           fields[part.fieldname] = part.value;
         }
       }
 
-      const nome = fields['nome'] || '';
-      const descricao = fields['descricao'] || '';
-      const precoStr = fields['preco'] || '0';
-      const quantidadeStr = fields['quantidade'] || '0';
-      const quantidadeMinStr = fields['quantidadeMin'];
-      const categoriaId = fields['categoriaId'];
-      const fornecedorId = fields['fornecedorId'];
-      const empresaId = fields['empresaId'];
+      const nome = fields["nome"] || "";
+      const descricao = fields["descricao"] || "";
+      const precoStr = fields["preco"] || "0";
+      const quantidadeStr = fields["quantidade"] || "0";
+      const quantidadeMinStr = fields["quantidadeMin"];
+      const categoriaId = fields["categoriaId"];
+      const fornecedorId = fields["fornecedorId"];
+      const empresaId = fields["empresaId"];
 
       if (!nome.trim() || !descricao.trim() || !empresaId) {
         return reply.status(400).send({
@@ -36,12 +36,12 @@ export async function createProduto(app: FastifyInstance) {
           camposRecebidos: {
             nome: !!nome,
             descricao: !!descricao,
-            empresaId: !!empresaId
-          }
+            empresaId: !!empresaId,
+          },
         });
       }
 
-      const preco = parseFloat(precoStr.replace(',', '.')) || 0;
+      const preco = parseFloat(precoStr.replace(",", ".")) || 0;
       const quantidade = parseInt(quantidadeStr) || 0;
       const quantidadeMin = quantidadeMinStr ? parseInt(quantidadeMinStr) : null;
 
@@ -62,18 +62,15 @@ export async function createProduto(app: FastifyInstance) {
       if (fotoFile) {
         try {
           const result = await new Promise((resolve, reject) => {
-            const uploadStream = cloudinary.uploader.upload_stream(
-              { resource_type: "auto" },
-              (error, result) => {
-                if (error) {
-                  console.error("Erro no upload:", error);
-                  resolve(null);
-                } else {
-                  resolve(result);
-                }
+            const uploadStream = cloudinary.uploader.upload_stream({ resource_type: "auto" }, (error, result) => {
+              if (error) {
+                console.error("Erro no upload:", error);
+                resolve(null);
+              } else {
+                resolve(result);
               }
-            );
-            pump(fotoFile.file, uploadStream).catch(err => {
+            });
+            pump(fotoFile.file, uploadStream).catch((err) => {
               console.error("Erro no pipeline:", err);
               resolve(null);
             });
@@ -104,8 +101,8 @@ export async function createProduto(app: FastifyInstance) {
       console.error("Erro ao criar produto:", error);
       return reply.status(500).send({
         mensagem: "Erro interno no servidor",
-        error: error instanceof Error ? error.message : 'Erro desconhecido',
-        stack: process.env.NODE_ENV === 'development' && error instanceof Error ? error.stack : undefined
+        error: error instanceof Error ? error.message : "Erro desconhecido",
+        stack: process.env.NODE_ENV === "development" && error instanceof Error ? error.stack : undefined,
       });
     }
   });

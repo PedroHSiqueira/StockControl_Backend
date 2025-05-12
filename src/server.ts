@@ -29,25 +29,25 @@ import { createConvite } from "./routes/convites/create-convites";
 import { getConvite } from "./routes/convites/get-convites";
 import { deleteConvite } from "./routes/convites/delete-convites";
 import { updateConvite } from "./routes/convites/update-convites";
-import fastifyMultipart from '@fastify/multipart';
+import fastifyMultipart from "@fastify/multipart";
 import { getLogs } from "./routes/logs/get-logs";
 
 const app = fastify();
 
 // Configuração do CORS
 app.register(fastifyCors, {
-  origin: ["https://stockcontrol-six.vercel.app"], 
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'user-id', 'client_key'], 
+  origin: ["https://stockcontrol-six.vercel.app"],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization", "user-id", "client_key"],
   credentials: true,
 });
 
 app.register(fastifyMultipart, {
   limits: {
-    fileSize: 5 * 1024 * 1024, 
-    fields: 10 
+    fileSize: 5 * 1024 * 1024,
+    fields: 10,
   },
-  attachFieldsToBody: false 
+  attachFieldsToBody: false,
 });
 // Rotas de Usuarios
 app.register(createUser);
@@ -96,7 +96,6 @@ app.register(loginUser);
 
 // Rota Logs
 app.register(getLogs);
-
 
 app.get("/", async (request, reply) => {
   return reply.status(200).send({ mensagem: "API Fastfy: StockControl" });

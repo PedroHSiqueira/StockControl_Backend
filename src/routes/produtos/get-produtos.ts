@@ -37,4 +37,3 @@ export async function getProduto(app: FastifyInstance) {
     reply.send({ contagemQuantidade, contagemPreco });
   });
 }
-
