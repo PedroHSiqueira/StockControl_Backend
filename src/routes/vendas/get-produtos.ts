@@ -19,4 +19,22 @@ export async function getVendas(app: FastifyInstance) {
       vendas,
     });
   });
+
+  app.get("/venda/contagem/:idEmpresa", async (request, reply) => {
+    const { idEmpresa } = request.params as { idEmpresa: string };
+
+    const total = await prisma.venda.aggregate({
+      where: {
+        empresaId: idEmpresa,
+      },
+      _sum: {
+        valorVenda: true,
+      },
+    });
+
+    return reply.status(200).send({
+      mensagem: "Total de vendas encontrado com sucesso",
+      total,
+    });
+  });
 }

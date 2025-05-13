@@ -24,7 +24,7 @@ export async function createVenda(app: FastifyInstance) {
         empresaId,
         produtoId,
         quantidade,
-        valorVenda: produto?.preco ?? valorVenda ?? 0,
+        valorVenda: produto?.preco !== undefined ? produto.preco * quantidade : valorVenda ?? 0,
         valorCompra,
       },
     });
