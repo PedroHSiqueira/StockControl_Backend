@@ -32,9 +32,6 @@ export async function getVendas(app: FastifyInstance) {
       },
     });
 
-    return reply.status(200).send({
-      mensagem: "Total de vendas encontrado com sucesso",
-      total,
-    });
+    return reply.status(200).send({total});
   });
 }
