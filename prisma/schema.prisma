@@ -59,6 +59,8 @@ model Empresa {
   Convite   Convite[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  Venda     Venda[]
+
   @@map("empresas")
 }
 
@@ -78,8 +80,24 @@ model Produto {
   empresaId     String?     @db.VarChar(36)
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+  Venda         Venda[]
 
   @@map("produtos")
+}
+
+model Venda {
+  id          Int      @id @default(autoincrement())
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+  empresaId   String   @db.VarChar(36)
+  produto     Produto  @relation(fields: [produtoId], references: [id])
+  produtoId   Int
+  quantidade  Int
+  valorVenda  Float
+  valorCompra Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("vendas")
 }
 
 model categoria {
@@ -124,9 +142,10 @@ model Convite {
 model Logs {
   id        String   @id @default(uuid()) @db.VarChar(36)
   descricao String   @db.VarChar(255)
-  tipo      TipoLog  
+  tipo      TipoLog
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
   @@map("logs")
 }
 

@@ -29,8 +29,10 @@ import { createConvite } from "./routes/convites/create-convites";
 import { getConvite } from "./routes/convites/get-convites";
 import { deleteConvite } from "./routes/convites/delete-convites";
 import { updateConvite } from "./routes/convites/update-convites";
-import fastifyMultipart from "@fastify/multipart";
+import { createVenda } from "./routes/vendas/create-venda";
+import { getVendas } from "./routes/vendas/get-produtos";
 import { getLogs } from "./routes/logs/get-logs";
+import fastifyMultipart from "@fastify/multipart";
 
 const app = fastify();
 
@@ -90,6 +92,10 @@ app.register(createConvite);
 app.register(getConvite);
 app.register(deleteConvite);
 app.register(updateConvite);
+
+//Rotas de Vendas
+app.register(createVenda);
+app.register(getVendas);
 
 //Rotas Login
 app.register(loginUser);
