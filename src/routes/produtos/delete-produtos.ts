@@ -5,12 +5,35 @@ export async function deleteProduto(app: FastifyInstance) {
   app.delete("/produtos/:id", async (request, reply) => {
     const { id } = request.params as { id: Number };
 
-    const fornecedor = await prisma.produto.delete({
+    const produtoExcluido = await prisma.produto.findUnique({
+      where: {
+        id: Number(id),
+      },
+    })
+    const produto = await prisma.produto.findUnique({
       where: {
         id: Number(id),
       },
     });
 
+    if (!produto) {
+      return reply.status(404).send({ mensagem: "Produto não encontrado" });
+    }
+
+    await prisma.produto.delete({
+      where: {
+        id: Number(id),
+      },
+    });
+
+    await prisma.logs.create({
+      data: {
+        descricao: `Produto Excluido: ${produtoExcluido?.nome}`,
+        tipo: "EXCLUSAO" as const,
+        empresaId: produto.empresaId,
+        usuarioId: produto.usuarioId,
+      }
+    });
     reply.status(204);
   });
 }

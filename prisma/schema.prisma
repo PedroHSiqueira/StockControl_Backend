@@ -26,6 +26,8 @@ model Usuario {
   Notificacao Notificacao[]
 
   @@map("usuarios")
+  Logs Logs[]
+  Produto Produto[]
 }
 
 model Fornecedor {
@@ -60,6 +62,7 @@ model Empresa {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   Venda     Venda[]
+  Logs      Logs[]
 
   @@map("empresas")
 }
@@ -72,6 +75,8 @@ model Produto {
   quantidade    Int
   quantidadeMin Int         @default(0)
   foto          String?     @db.VarChar(255)
+  usuarioId String?  @db.VarChar(36)
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id])
   fornecedor    Fornecedor? @relation(fields: [fornecedorId], references: [id])
   fornecedorId  String?     @db.VarChar(36)
   categoria     categoria?  @relation(fields: [categoriaId], references: [id])
@@ -143,6 +148,10 @@ model Logs {
   id        String   @id @default(uuid()) @db.VarChar(36)
   descricao String   @db.VarChar(255)
   tipo      TipoLog
+  empresa       Empresa?    @relation(fields: [empresaId], references: [id])
+  empresaId     String?     @db.VarChar(36)
+  usuarioId String?  @db.VarChar(36)
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -165,6 +174,7 @@ enum TipoLog {
   CRIACAO
   ATUALIZACAO
   EXCLUSAO
+  BAIXA
 }
 
 enum Medidas {

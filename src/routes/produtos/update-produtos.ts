@@ -29,6 +29,7 @@ export async function updateProduto(app: FastifyInstance) {
       const quantidadeMinStr = fields["quantidadeMin"];
       const categoriaId = fields["categoriaId"];
       const fornecedorId = fields["fornecedorId"];
+      const usuarioId = fields["usuarioId"];
 
       if (!nome.trim() || !descricao.trim()) {
         return reply.status(400).send({
@@ -96,7 +97,19 @@ export async function updateProduto(app: FastifyInstance) {
           foto: fotoUrl,
           categoriaId: categoriaId || null,
           fornecedorId: fornecedorId || null,
+          usuarioId: usuarioId || null,
         },
+      });
+
+      const logData = {
+        empresaId: produtoAtualizado.empresaId,
+        descricao: `Produto Atualizado: ${produtoAtualizado.nome}`,
+        tipo: "ATUALIZACAO" as const,
+        usuarioId: produtoAtualizado.usuarioId,
+      };
+
+      await prisma.logs.create({
+        data: logData
       });
 
       return reply.status(200).send(produtoAtualizado);

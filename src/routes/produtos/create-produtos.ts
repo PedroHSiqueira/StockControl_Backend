@@ -29,7 +29,8 @@ export async function createProduto(app: FastifyInstance) {
       const categoriaId = fields["categoriaId"];
       const fornecedorId = fields["fornecedorId"];
       const empresaId = fields["empresaId"];
-
+      const usuarioId = fields["usuarioId"];
+      
       if (!nome.trim() || !descricao.trim() || !empresaId) {
         return reply.status(400).send({
           mensagem: "Campos obrigatórios faltando",
@@ -81,7 +82,7 @@ export async function createProduto(app: FastifyInstance) {
           console.error("Erro no upload da imagem:", uploadError);
         }
       }
-
+      
       const produto = await prisma.produto.create({
         data: {
           nome: nome.trim(),
@@ -93,7 +94,20 @@ export async function createProduto(app: FastifyInstance) {
           categoriaId: categoriaId || null,
           fornecedorId: fornecedorId || null,
           empresaId,
+          usuarioId,
         },
+      });
+      
+      
+      const logData = {
+        empresaId: produto.empresaId,
+        descricao: `Produto criado: ${produto.nome}`,
+        tipo: "CRIACAO" as const,
+        usuarioId: produto.usuarioId,
+      };
+
+      await prisma.logs.create({
+        data: logData
       });
 
       return reply.status(201).send(produto);
