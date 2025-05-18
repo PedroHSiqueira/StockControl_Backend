@@ -10,9 +10,10 @@ export async function createVenda(app: FastifyInstance) {
       quantidade: z.number().min(1),
       valorVenda: z.number().min(0).optional(),
       valorCompra: z.number().min(0),
+      usuarioId: z.string().optional(),
     });
 
-    const { empresaId, produtoId, quantidade, valorVenda, valorCompra } = criarVendaBody.parse(request.body);
+    const { empresaId, produtoId, quantidade, valorVenda, valorCompra, usuarioId } = criarVendaBody.parse(request.body);
     const produto = await prisma.produto.findUnique({
       where: {
         id: produtoId,
@@ -26,6 +27,8 @@ export async function createVenda(app: FastifyInstance) {
         quantidade,
         valorVenda: produto?.preco !== undefined ? produto.preco * quantidade : valorVenda ?? 0,
         valorCompra,
+        usuarioId,
+        
       },
     });
 
@@ -37,6 +40,15 @@ export async function createVenda(app: FastifyInstance) {
         quantidade: produto?.quantidade ? produto.quantidade - quantidade : 0,
       },
     });
+
+     await prisma.logs.create({
+          data: {
+            descricao: `Produto Vendido: ${produto?.nome} | Quantidade: ${quantidade}`,
+            tipo: "BAIXA" as const,
+            empresaId: produto?.empresaId,
+            usuarioId: produto?.usuarioId,
+          }
+        });
 
     return reply.status(201).send({
       mensagem: "Venda criada com sucesso",

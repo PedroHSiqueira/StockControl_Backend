@@ -28,6 +28,7 @@ model Usuario {
   @@map("usuarios")
   Logs Logs[]
   Produto Produto[]
+  Venda Venda[]
 }
 
 model Fornecedor {
@@ -96,6 +97,8 @@ model Venda {
   empresaId   String   @db.VarChar(36)
   produto     Produto  @relation(fields: [produtoId], references: [id])
   produtoId   Int
+  usuarioId String?  @db.VarChar(36)
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id])
   quantidade  Int
   valorVenda  Float
   valorCompra Float
