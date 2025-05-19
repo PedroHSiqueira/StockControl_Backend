@@ -57,15 +57,27 @@ model Empresa {
   estado    String?   @db.VarChar(2)
   cidade    String?   @db.VarChar(60)
   cep       String?   @db.VarChar(10)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  ChaveAtivacao ChaveAtivacao?
   usuario   Usuario[]
   Produto   Produto[]
   Convite   Convite[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  Venda     Venda[]
   Logs      Logs[]
+  Venda     Venda[]
 
   @@map("empresas")
+}
+
+model ChaveAtivacao {
+  id        String    @id @default(uuid()) @db.VarChar(36)
+  chave     String    @unique @db.VarChar(36)
+  empresa   Empresa?  @relation(fields: [empresaId], references: [id])
+  empresaId String?   @unique @db.VarChar(36)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("chaves_ativacao")
 }
 
 model Produto {

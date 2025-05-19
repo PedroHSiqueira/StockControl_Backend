@@ -33,6 +33,8 @@ import { createVenda } from "./routes/vendas/create-venda";
 import { getVendas } from "./routes/vendas/get-produtos";
 import { getLogs } from "./routes/logs/get-logs";
 import fastifyMultipart from "@fastify/multipart";
+import { createKey } from "./routes/chaves/create-chave";
+import { getKey } from "./routes/chaves/get-chave";
 
 const app = fastify();
 
@@ -92,6 +94,10 @@ app.register(createConvite);
 app.register(getConvite);
 app.register(deleteConvite);
 app.register(updateConvite);
+
+//Rotas de chaves
+app.register(createKey);
+app.register(getKey);
 
 //Rotas de Vendas
 app.register(createVenda);
