@@ -24,11 +24,11 @@ model Usuario {
   empresa     Empresa?      @relation(fields: [empresaId], references: [id])
   empresaId   String?       @db.VarChar(36)
   Notificacao Notificacao[]
+  Logs        Logs[]
+  Produto     Produto[]
+  Venda       Venda[]
 
   @@map("usuarios")
-  Logs Logs[]
-  Produto Produto[]
-  Venda Venda[]
 }
 
 model Fornecedor {
@@ -47,35 +47,34 @@ model Fornecedor {
 }
 
 model Empresa {
-  id        String    @id @default(uuid()) @db.VarChar(36)
-  nome      String    @db.VarChar(60)
-  email     String    @unique @db.VarChar(60)
-  foto      String?   @db.VarChar(255)
-  telefone  String?   @db.VarChar(15)
-  endereco  String?   @db.VarChar(255)
-  pais      String?   @db.VarChar(60)
-  estado    String?   @db.VarChar(2)
-  cidade    String?   @db.VarChar(60)
-  cep       String?   @db.VarChar(10)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id            String         @id @default(uuid()) @db.VarChar(36)
+  nome          String         @db.VarChar(60)
+  email         String         @unique @db.VarChar(60)
+  foto          String?        @db.VarChar(255)
+  telefone      String?        @db.VarChar(15)
+  endereco      String?        @db.VarChar(255)
+  pais          String?        @db.VarChar(60)
+  estado        String?        @db.VarChar(2)
+  cidade        String?        @db.VarChar(60)
+  cep           String?        @db.VarChar(10)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   ChaveAtivacao ChaveAtivacao?
-  usuario   Usuario[]
-  Produto   Produto[]
-  Convite   Convite[]
-  Logs      Logs[]
-  Venda     Venda[]
+  usuario       Usuario[]
+  Produto       Produto[]
+  Convite       Convite[]
+  Logs          Logs[]
+  Venda         Venda[]
 
   @@map("empresas")
 }
 
 model ChaveAtivacao {
-  id        String    @id @default(uuid()) @db.VarChar(36)
-  chave     String    @unique @db.VarChar(36)
-  empresa   Empresa?  @relation(fields: [empresaId], references: [id])
-  empresaId String?   @unique @db.VarChar(36)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  chave     String   @id @default(uuid()) @db.VarChar(36)
+  empresa   Empresa? @relation(fields: [empresaId], references: [id])
+  empresaId String?  @unique @db.VarChar(36)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("chaves_ativacao")
 }
@@ -88,8 +87,8 @@ model Produto {
   quantidade    Int
   quantidadeMin Int         @default(0)
   foto          String?     @db.VarChar(255)
-  usuarioId String?  @db.VarChar(36)
-  usuario   Usuario? @relation(fields: [usuarioId], references: [id])
+  usuarioId     String?     @db.VarChar(36)
+  usuario       Usuario?    @relation(fields: [usuarioId], references: [id])
   fornecedor    Fornecedor? @relation(fields: [fornecedorId], references: [id])
   fornecedorId  String?     @db.VarChar(36)
   categoria     categoria?  @relation(fields: [categoriaId], references: [id])
@@ -109,8 +108,8 @@ model Venda {
   empresaId   String   @db.VarChar(36)
   produto     Produto  @relation(fields: [produtoId], references: [id])
   produtoId   Int
-  usuarioId String?  @db.VarChar(36)
-  usuario   Usuario? @relation(fields: [usuarioId], references: [id])
+  usuarioId   String?  @db.VarChar(36)
+  usuario     Usuario? @relation(fields: [usuarioId], references: [id])
   quantidade  Int
   valorVenda  Float
   valorCompra Float
@@ -163,8 +162,8 @@ model Logs {
   id        String   @id @default(uuid()) @db.VarChar(36)
   descricao String   @db.VarChar(255)
   tipo      TipoLog
-  empresa       Empresa?    @relation(fields: [empresaId], references: [id])
-  empresaId     String?     @db.VarChar(36)
+  empresa   Empresa? @relation(fields: [empresaId], references: [id])
+  empresaId String?  @db.VarChar(36)
   usuarioId String?  @db.VarChar(36)
   usuario   Usuario? @relation(fields: [usuarioId], references: [id])
   createdAt DateTime @default(now())
