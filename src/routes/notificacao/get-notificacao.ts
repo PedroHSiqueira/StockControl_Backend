@@ -1,5 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { prisma } from "../../lib/prisma";
+import { obterNotificacoesLidasPorUsuario } from "../../services/notificacoes-lidas.service";
 
 export async function getNotificacao(app: FastifyInstance) {
   app.get("/notificacao", async (request, reply) => {
@@ -28,9 +29,17 @@ export async function getNotificacao(app: FastifyInstance) {
   app.get("/notificacao/:id", async (request, reply) => {
     const { id } = request.params as { id: string };
 
+    const usuario = await prisma.usuario.findUnique({
+      where: { id },
+      select: { empresaId: true }
+    });
+
     const notificacoes = await prisma.notificacao.findMany({
       where: {
-        usuarioId: id,
+        OR: [
+          { usuarioId: id }, 
+          { empresaId: usuario?.empresaId } 
+        ]
       },
       include: {
         convite: {
@@ -50,6 +59,19 @@ export async function getNotificacao(app: FastifyInstance) {
       },
     });
 
-    reply.send(notificacoes);
+    const notificacoesLidas = await obterNotificacoesLidasPorUsuario(id);
+    const notificacoesLidasIds = notificacoesLidas.map(n => n.notificacaoId);
+
+    const notificacoesComStatus = notificacoes.map(notificacao => {
+      if (notificacao.empresaId) {
+        return {
+          ...notificacao,
+          lida: notificacoesLidasIds.includes(notificacao.id)
+        };
+      }
+      return notificacao;
+    });
+
+    reply.send(notificacoesComStatus);
   });
 }

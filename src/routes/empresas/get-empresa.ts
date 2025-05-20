@@ -12,43 +12,44 @@ export async function getEmpresa(app: FastifyInstance) {
     reply.send(empresas);
   });
 
-app.get("/empresa/usuario/:idUsuario", async (request: FastifyRequest, reply: FastifyReply) => {
-  const { idUsuario } = request.params as { idUsuario: string };
+  app.get("/empresa/usuario/:idUsuario", async (request: FastifyRequest, reply: FastifyReply) => {
+    const { idUsuario } = request.params as { idUsuario: string };
 
-  const empresa = await prisma.usuario.findUnique({
-    where: {
-      id: String(idUsuario),
-    },
-    include: {
-      empresa: true,
-    },
+    const empresa = await prisma.usuario.findUnique({
+      where: {
+        id: String(idUsuario),
+      },
+      include: {
+        empresa: true,
+      },
+    });
+
+    if (!empresa) {
+      return reply.status(404).send({ mensagem: "Usuário não encontrado" });
+    }
+
+    reply.send(empresa.empresa);
   });
 
-  if (!empresa) {
-    return reply.status(404).send({ mensagem: "Usuário não encontrado" });
-  }
+  app.get("/empresa/empresa/:idEmpresa", async (request: FastifyRequest, reply: FastifyReply) => {
+    const { idEmpresa } = request.params as { idEmpresa: string };
 
-  reply.send(empresa.empresa);
-});
+    const empresa = await prisma.empresa.findUnique({
+      where: {
+        id: idEmpresa,
+      },
+      include: {
+        Produto: true,
+        ChaveAtivacao: true,
+        usuario: true,
+      },
+    });
 
-app.get("/empresa/empresa/:idEmpresa", async (request: FastifyRequest, reply: FastifyReply) => {
-  const { idEmpresa } = request.params as { idEmpresa: string };
+    if (!empresa) {
+      return reply.status(404).send({ mensagem: "Empresa não encontrada" });
+    }
 
-  const empresa = await prisma.empresa.findUnique({
-    where: {
-      id: idEmpresa,
-    },
-    include: {
-      Produto: true,
-      ChaveAtivacao: true,
-    },
+    reply.send(empresa);
   });
-
-  if (!empresa) {
-    return reply.status(404).send({ mensagem: "Empresa não encontrada" });
-  }
-
-  reply.send(empresa);
-});
 
 }

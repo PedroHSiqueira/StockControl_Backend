@@ -1,6 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { prisma } from "../../lib/prisma";
+import { marcarComoLida } from "../../services/notificacoes-lidas.service";
 
 export async function updateNotificacao(app: FastifyInstance) {
   app.put("/notificacao/:id", async (request, reply) => {
@@ -25,24 +26,49 @@ export async function updateNotificacao(app: FastifyInstance) {
         },
       });
 
+      const notificacoesEmpresa = await prisma.notificacao.findMany({
+        where: {
+          empresaId: {
+            not: null
+          },
+          usuarioId: null
+        },
+        select: { id: true }
+      });
+
+      for (const notificacao of notificacoesEmpresa) {
+        await marcarComoLida(notificacao.id, usuarioId);
+      }
+
       return reply.send({ message: "Todas as notificações foram marcadas como lidas." });
     }
 
-    const notificacao = await prisma.notificacao.update({
-      where: {
-        id: String(id),
-      },
-      data: {
-        ...(titulo && { titulo }),
-        ...(descricao && { descricao }),
-        ...(lida !== undefined && { lida }),
-        usuario: {
-          connect: {
-            id: usuarioId,
-          },
-        },
-      },
+    const notificacao = await prisma.notificacao.findUnique({
+      where: { id: String(id) }
     });
+
+    if (!notificacao) {
+      return reply.status(404).send({ message: "Notificação não encontrada" });
+    }
+
+    if (notificacao.empresaId && lida) {
+      await marcarComoLida(notificacao.id, usuarioId);
+    } else if (lida !== undefined) {
+      await prisma.notificacao.update({
+        where: { id: String(id) },
+        data: { lida }
+      });
+    }
+
+    if (titulo || descricao) {
+      await prisma.notificacao.update({
+        where: { id: String(id) },
+        data: {
+          ...(titulo && { titulo }),
+          ...(descricao && { descricao }),
+        }
+      });
+    }
 
     return reply.send(notificacao);
   });

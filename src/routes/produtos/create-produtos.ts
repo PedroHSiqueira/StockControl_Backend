@@ -7,6 +7,74 @@ import { promisify } from "util";
 const pump = promisify(pipeline);
 
 export async function createProduto(app: FastifyInstance) {
+
+
+  app.post("/produtos/verificar-estoque-empresa", async (request, reply) => {
+    const empresasComNotificacaoRecentemente = await prisma.notificacao.findMany({
+      where: {
+        titulo: "Alerta de Estoque",
+        createdAt: { gt: new Date(Date.now() - 60 * 60 * 1000) }, 
+        empresaId: { not: null }
+      },
+      select: {
+        empresaId: true
+      },
+      distinct: ['empresaId']
+    });
+
+    const empresasIdsComNotificacao = empresasComNotificacaoRecentemente.map(n => n.empresaId);
+
+    const produtos = await prisma.produto.findMany({
+      include: { empresa: true }
+    });
+
+    const produtosPorEmpresa: Record<string, any[]> = {};
+    produtos.forEach(produto => {
+      if (!produto.empresaId) return;
+      if (!produtosPorEmpresa[produto.empresaId]) {
+        produtosPorEmpresa[produto.empresaId] = [];
+      }
+      produtosPorEmpresa[produto.empresaId].push(produto);
+    });
+
+    for (const [empresaId, produtosEmpresa] of Object.entries(produtosPorEmpresa)) {
+      if (empresasIdsComNotificacao.includes(empresaId)) continue;
+
+      const produtosAlerta = produtosEmpresa.filter(produto => {
+        return produto.quantidadeMin > 0 &&
+          produto.quantidade < produto.quantidadeMin + 5;
+      });
+
+      if (produtosAlerta.length > 0) {
+        const empresa = await prisma.empresa.findUnique({
+          where: { id: empresaId },
+          include: { usuario: true }
+        });
+
+        if (!empresa) continue;
+
+        const titulo = "Alerta de Estoque";
+        let descricao = "Os seguintes produtos estão com estoque baixo:\n";
+
+        produtosAlerta.forEach(produto => {
+          const estado = produto.quantidade < produto.quantidadeMin ? "CRÍTICO" : "ATENÇÃO";
+          descricao += `\n- ${produto.nome}: ${estado} (${produto.quantidade}/${produto.quantidadeMin})`;
+        });
+
+        await prisma.notificacao.create({
+          data: {
+            titulo,
+            descricao: `Enviado por Sistema de Estoque: ${descricao}`,
+            lida: false,
+            empresa: { connect: { id: empresaId } }
+          }
+        });
+      }
+    }
+
+    reply.send({ mensagem: "Verificação de estoque concluída" });
+  });
+
   app.post("/produtos", async (request: FastifyRequest, reply) => {
     try {
       const parts = request.parts();
@@ -30,7 +98,7 @@ export async function createProduto(app: FastifyInstance) {
       const fornecedorId = fields["fornecedorId"];
       const empresaId = fields["empresaId"];
       const usuarioId = fields["usuarioId"];
-      
+
       if (!nome.trim() || !descricao.trim() || !empresaId) {
         return reply.status(400).send({
           mensagem: "Campos obrigatórios faltando",
@@ -82,7 +150,7 @@ export async function createProduto(app: FastifyInstance) {
           console.error("Erro no upload da imagem:", uploadError);
         }
       }
-      
+
       const produto = await prisma.produto.create({
         data: {
           nome: nome.trim(),
@@ -97,8 +165,8 @@ export async function createProduto(app: FastifyInstance) {
           usuarioId,
         },
       });
-      
-      
+
+
       const logData = {
         empresaId: produto.empresaId,
         descricao: `Produto criado: ${produto.nome}`,
@@ -119,5 +187,6 @@ export async function createProduto(app: FastifyInstance) {
         stack: process.env.NODE_ENV === "development" && error instanceof Error ? error.stack : undefined,
       });
     }
+
   });
 }

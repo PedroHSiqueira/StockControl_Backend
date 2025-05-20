@@ -29,6 +29,7 @@ model Usuario {
   Venda       Venda[]
 
   @@map("usuarios")
+  NotificacaoLida NotificacaoLida[]
 }
 
 model Fornecedor {
@@ -146,6 +147,7 @@ model Notificacao {
   updatedAt DateTime @updatedAt
 
   @@map("notificacoes")
+  NotificacaoLida NotificacaoLida[]
 }
 
 model Convite {
@@ -161,6 +163,16 @@ model Convite {
   @@map("convites")
 }
 
+model NotificacaoLida {
+  notificacaoId String     @db.VarChar(36)
+  usuarioId     String     @db.VarChar(36)
+  notificacao   Notificacao @relation(fields: [notificacaoId], references: [id])
+  usuario       Usuario     @relation(fields: [usuarioId], references: [id])
+  createdAt     DateTime   @default(now())
+
+  @@id([notificacaoId, usuarioId])
+  @@map("notificacoes_lidas")
+}
 model Logs {
   id        String   @id @default(uuid()) @db.VarChar(36)
   descricao String   @db.VarChar(255)
