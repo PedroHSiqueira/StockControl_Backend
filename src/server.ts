@@ -35,6 +35,7 @@ import { getLogs } from "./routes/logs/get-logs";
 import { createKey } from "./routes/chaves/create-chave";
 import { getKey } from "./routes/chaves/get-chave";
 import fastifyMultipart from "@fastify/multipart";
+import { updateKey } from "./routes/chaves/update-chave";
 
 const app = fastify();
 
