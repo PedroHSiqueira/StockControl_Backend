@@ -65,6 +65,7 @@ model Empresa {
   Convite       Convite[]
   Logs          Logs[]
   Venda         Venda[]
+  Notificacao Notificacao[]
 
   @@map("empresas")
 }
@@ -135,6 +136,8 @@ model Notificacao {
   titulo    String   @db.VarChar(60)
   descricao String   @db.VarChar(255)
   lida      Boolean  @default(false)
+  empresa   Empresa? @relation(fields: [empresaId], references: [id])
+  empresaId String?  @db.VarChar(36)
   usuarioId String?  @db.VarChar(36)
   usuario   Usuario? @relation(fields: [usuarioId], references: [id])
   conviteId String?  @unique @db.VarChar(36)
