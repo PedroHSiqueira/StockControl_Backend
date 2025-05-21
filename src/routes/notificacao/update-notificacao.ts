@@ -1,7 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { prisma } from "../../lib/prisma";
-import { marcarComoLida } from "../../services/notificacoes-lidas.service";
 
 export async function updateNotificacao(app: FastifyInstance) {
   app.put("/notificacao/:id", async (request, reply) => {
@@ -26,38 +25,88 @@ export async function updateNotificacao(app: FastifyInstance) {
         },
       });
 
-      const notificacoesEmpresa = await prisma.notificacao.findMany({
-        where: {
-          empresaId: {
-            not: null
-          },
-          usuarioId: null
-        },
-        select: { id: true }
+      const usuario = await prisma.usuario.findUnique({
+        where: { id: usuarioId },
+        select: { empresaId: true }
       });
 
-      for (const notificacao of notificacoesEmpresa) {
-        await marcarComoLida(notificacao.id, usuarioId);
+      if (usuario?.empresaId) {
+        const notificacoesEmpresa = await prisma.notificacao.findMany({
+          where: {
+            empresaId: usuario.empresaId,
+            usuarioId: null,
+            NOT: {
+              NotificacaoLida: {
+                some: { usuarioId }
+              }
+            }
+          },
+          select: { id: true }
+        });
+
+        await prisma.notificacaoLida.createMany({
+          data: notificacoesEmpresa.map(n => ({
+            notificacaoId: n.id,
+            usuarioId
+          })),
+          skipDuplicates: true
+        });
       }
 
-      return reply.send({ message: "Todas as notificações foram marcadas como lidas." });
+      return reply.send({ 
+        success: true,
+        message: "Todas as notificações foram marcadas como lidas." 
+      });
     }
 
     const notificacao = await prisma.notificacao.findUnique({
-      where: { id: String(id) }
+      where: { id: String(id) },
+      include: {
+        NotificacaoLida: {
+          where: {
+            usuarioId
+          }
+        }
+      }
     });
 
     if (!notificacao) {
-      return reply.status(404).send({ message: "Notificação não encontrada" });
+      return reply.status(404).send({ 
+        success: false,
+        message: "Notificação não encontrada" 
+      });
     }
 
-    if (notificacao.empresaId && lida) {
-      await marcarComoLida(notificacao.id, usuarioId);
-    } else if (lida !== undefined) {
-      await prisma.notificacao.update({
-        where: { id: String(id) },
-        data: { lida }
-      });
+    if (lida !== undefined) {
+      if (notificacao.empresaId) {
+        if (lida) {
+          await prisma.notificacaoLida.upsert({
+            where: {
+              notificacaoId_usuarioId: {
+                notificacaoId: notificacao.id,
+                usuarioId
+              }
+            },
+            create: {
+              notificacaoId: notificacao.id,
+              usuarioId
+            },
+            update: {}
+          });
+        } else if (notificacao.NotificacaoLida.length > 0) {
+          await prisma.notificacaoLida.deleteMany({
+            where: {
+              notificacaoId: notificacao.id,
+              usuarioId
+            }
+          });
+        }
+      } else {
+        await prisma.notificacao.update({
+          where: { id: String(id) },
+          data: { lida }
+        });
+      }
     }
 
     if (titulo || descricao) {
@@ -70,6 +119,24 @@ export async function updateNotificacao(app: FastifyInstance) {
       });
     }
 
-    return reply.send(notificacao);
+    const notificacaoAtualizada = await prisma.notificacao.findUnique({
+      where: { id: String(id) },
+      include: {
+        NotificacaoLida: {
+          where: {
+            usuarioId
+          }
+        }
+      }
+    });
+
+    const isLida = notificacaoAtualizada?.empresaId 
+      ? notificacaoAtualizada.NotificacaoLida.length > 0
+      : notificacaoAtualizada?.lida;
+
+    return reply.send({
+      ...notificacaoAtualizada,
+      lida: isLida
+    });
   });
 }

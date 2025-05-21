@@ -49,15 +49,6 @@ export async function createNotificacao(app: FastifyInstance) {
       },
     });
 
-   if (isEmpresa && usuarioId) {
-        await prisma.notificacaoLida.create({
-          data: {
-            notificacaoId: notificacao.id,
-            usuarioId: usuarioId
-          }
-        });
-      }
-
       return reply.status(201).send({ 
         success: true,
         notificacao 

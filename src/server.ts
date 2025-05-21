@@ -36,6 +36,7 @@ import { createKey } from "./routes/chaves/create-chave";
 import { getKey } from "./routes/chaves/get-chave";
 import fastifyMultipart from "@fastify/multipart";
 import { updateKey } from "./routes/chaves/update-chave";
+import { notificacoesLidas } from "./routes/notificacao/notificacoes-lidas";
 
 const app = fastify();
 
@@ -89,6 +90,8 @@ app.register(createNotificacao);
 app.register(getNotificacao);
 app.register(updateNotificacao);
 app.register(deleteNotificacao);
+app.register(notificacoesLidas);
+
 
 //Rotas de convites
 app.register(createConvite);
