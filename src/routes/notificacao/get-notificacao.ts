@@ -28,17 +28,17 @@ export async function getNotificacao(app: FastifyInstance) {
 
   app.get("/notificacao/:id", async (request, reply) => {
     const { id } = request.params as { id: string };
-
+  
     const usuario = await prisma.usuario.findUnique({
       where: { id },
       select: { empresaId: true }
     });
-
+  
     const notificacoes = await prisma.notificacao.findMany({
       where: {
         OR: [
-          { usuarioId: id }, 
-          { empresaId: usuario?.empresaId } 
+          { usuarioId: id },
+          { empresaId: usuario?.empresaId }
         ]
       },
       include: {
@@ -53,29 +53,26 @@ export async function getNotificacao(app: FastifyInstance) {
             nome: true,
           },
         },
-        NotificacaoLida: true,
+        NotificacaoLida: {
+          where: {
+            usuarioId: id
+          }
+        },
       },
       orderBy: {
         createdAt: "desc",
       },
     });
-
-    const notificacoesLidas = await prisma.notificacaoLida.findMany({
-      where: { usuarioId: id },
-      select: { notificacaoId: true }
-    });
-    const notificacoesLidasIds = notificacoesLidas.map(n => n.notificacaoId);
-
+  
     const notificacoesComStatus = notificacoes.map(notificacao => {
-      if (notificacao.empresaId) {
-        return {
-          ...notificacao,
-          lida: notificacoesLidasIds.includes(notificacao.id)
-        };
-      }
-      return notificacao;
+      return {
+        ...notificacao,
+        lida: notificacao.empresaId 
+          ? notificacao.NotificacaoLida.length > 0
+          : notificacao.lida
+      };
     });
-
+  
     reply.send(notificacoesComStatus);
   });
 }

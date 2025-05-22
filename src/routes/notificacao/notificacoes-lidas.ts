@@ -112,4 +112,33 @@ export async function notificacoesLidas(app: FastifyInstance) {
       });
     }
   });
+
+  app.post("/notificacoes-lidas/remover", async (request, reply) => {
+    const bodySchema = z.object({
+      notificacaoId: z.string().uuid("ID de notificação inválido"),
+      usuarioId: z.string().uuid("ID de usuário inválido"),
+    });
+
+    const { notificacaoId, usuarioId } = bodySchema.parse(request.body);
+
+    try {
+      await prisma.notificacaoLida.deleteMany({
+        where: {
+          notificacaoId,
+          usuarioId
+        }
+      });
+
+      return reply.send({
+        success: true,
+        message: "Registro de notificação lida removido com sucesso"
+      });
+    } catch (error) {
+      console.error("Erro ao remover registro de notificação lida:", error);
+      return reply.status(500).send({
+        success: false,
+        message: "Erro interno ao remover registro de notificação lida"
+      });
+    }
+  });
 }
