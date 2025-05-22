@@ -35,7 +35,7 @@ export async function createFornecedor(app: FastifyInstance) {
             nome: !!nome,
             email: !!email,
             cnpj: !!cnpj,
-            telefone: !!telefone
+            telefone: !!telefone,
           }
         });
       }
@@ -76,12 +76,6 @@ export async function createFornecedor(app: FastifyInstance) {
           telefone: telefone.trim(),
           categoria: categoria.trim(),
           foto: fotoUrl,
-          empresa: {
-            connect: {
-              id: empresaId.trim(),
-            },
-          },
-          
         },
       });
       
