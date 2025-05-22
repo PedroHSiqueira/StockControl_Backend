@@ -14,22 +14,22 @@ datasource db {
 }
 
 model Usuario {
-  id          String        @id @default(uuid()) @db.VarChar(36)
-  nome        String        @db.VarChar(60)
-  email       String        @unique @db.VarChar(60)
-  senha       String        @db.VarChar(60)
-  tipo        TipoUsuario
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  empresa     Empresa?      @relation(fields: [empresaId], references: [id])
-  empresaId   String?       @db.VarChar(36)
-  Notificacao Notificacao[]
-  Logs        Logs[]
-  Produto     Produto[]
-  Venda       Venda[]
+  id              String            @id @default(uuid()) @db.VarChar(36)
+  nome            String            @db.VarChar(60)
+  email           String            @unique @db.VarChar(60)
+  senha           String            @db.VarChar(60)
+  tipo            TipoUsuario
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  empresa         Empresa?          @relation(fields: [empresaId], references: [id])
+  empresaId       String?           @db.VarChar(36)
+  Notificacao     Notificacao[]
+  Logs            Logs[]
+  Produto         Produto[]
+  Venda           Venda[]
+  NotificacaoLida NotificacaoLida[]
 
   @@map("usuarios")
-  NotificacaoLida NotificacaoLida[]
 }
 
 model Fornecedor {
@@ -40,8 +40,8 @@ model Fornecedor {
   email     String    @unique @db.VarChar(60)
   categoria String    @db.VarChar(60)
   foto      String?   @db.VarChar(255)
-  empresa       Empresa?    @relation(fields: [empresaId], references: [id])
-  empresaId     String?     @db.VarChar(36)
+  empresa   Empresa   @relation(fields: [empresaId], references: [id])
+  empresaId String    @db.VarChar(36)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   Produto   Produto[]
@@ -68,10 +68,10 @@ model Empresa {
   Convite       Convite[]
   Logs          Logs[]
   Venda         Venda[]
-  Notificacao Notificacao[]
+  Notificacao   Notificacao[]
+  Fornecedor    Fornecedor[]
 
   @@map("empresas")
-  Fornecedor Fornecedor[]
 }
 
 model ChaveAtivacao {
@@ -136,21 +136,21 @@ model categoria {
 }
 
 model Notificacao {
-  id        String   @id @default(uuid()) @db.VarChar(36)
-  titulo    String   @db.VarChar(60)
-  descricao String   @db.VarChar(255)
-  lida      Boolean  @default(false)
-  empresa   Empresa? @relation(fields: [empresaId], references: [id])
-  empresaId String?  @db.VarChar(36)
-  usuarioId String?  @db.VarChar(36)
-  usuario   Usuario? @relation(fields: [usuarioId], references: [id])
-  conviteId String?  @unique @db.VarChar(36)
-  convite   Convite? @relation(fields: [conviteId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String            @id @default(uuid()) @db.VarChar(36)
+  titulo          String            @db.VarChar(60)
+  descricao       String            @db.VarChar(255)
+  lida            Boolean           @default(false)
+  empresa         Empresa?          @relation(fields: [empresaId], references: [id])
+  empresaId       String?           @db.VarChar(36)
+  usuarioId       String?           @db.VarChar(36)
+  usuario         Usuario?          @relation(fields: [usuarioId], references: [id])
+  conviteId       String?           @unique @db.VarChar(36)
+  convite         Convite?          @relation(fields: [conviteId], references: [id])
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  NotificacaoLida NotificacaoLida[]
 
   @@map("notificacoes")
-  NotificacaoLida NotificacaoLida[]
 }
 
 model Convite {
@@ -167,15 +167,16 @@ model Convite {
 }
 
 model NotificacaoLida {
-  notificacaoId String     @db.VarChar(36)
-  usuarioId     String     @db.VarChar(36)
+  notificacaoId String      @db.VarChar(36)
+  usuarioId     String      @db.VarChar(36)
   notificacao   Notificacao @relation(fields: [notificacaoId], references: [id])
   usuario       Usuario     @relation(fields: [usuarioId], references: [id])
-  createdAt     DateTime   @default(now())
+  createdAt     DateTime    @default(now())
 
   @@id([notificacaoId, usuarioId])
   @@map("notificacoes_lidas")
 }
+
 model Logs {
   id        String   @id @default(uuid()) @db.VarChar(36)
   descricao String   @db.VarChar(255)

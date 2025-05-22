@@ -26,6 +26,7 @@ export async function createFornecedor(app: FastifyInstance) {
       const cnpj = fields['cnpj'] || '';
       const telefone = fields['telefone'] || '';
       const categoria = fields['categoria'] || '';
+      const empresaId = fields['empresaId'] || '';
 
       if (!nome.trim() || !email.trim() || !cnpj.trim() || !telefone.trim()) {
         return reply.status(400).send({ 
@@ -74,7 +75,13 @@ export async function createFornecedor(app: FastifyInstance) {
           cnpj: cnpj.trim(),
           telefone: telefone.trim(),
           categoria: categoria.trim(),
-          foto: fotoUrl
+          foto: fotoUrl,
+          empresa: {
+            connect: {
+              id: empresaId.trim(),
+            },
+          },
+          
         },
       });
       
