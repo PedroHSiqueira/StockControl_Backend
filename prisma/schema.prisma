@@ -40,6 +40,8 @@ model Fornecedor {
   email     String    @unique @db.VarChar(60)
   categoria String    @db.VarChar(60)
   foto      String?   @db.VarChar(255)
+  empresa       Empresa?    @relation(fields: [empresaId], references: [id])
+  empresaId     String?     @db.VarChar(36)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   Produto   Produto[]
@@ -69,6 +71,7 @@ model Empresa {
   Notificacao Notificacao[]
 
   @@map("empresas")
+  Fornecedor Fornecedor[]
 }
 
 model ChaveAtivacao {
