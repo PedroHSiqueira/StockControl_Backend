@@ -28,7 +28,7 @@ export async function createFornecedor(app: FastifyInstance) {
       const categoria = fields['categoria'] || '';
       const empresaId = fields['empresaId'] || '';
 
-      if (!nome.trim() || !email.trim() || !cnpj.trim() || !telefone.trim()) {
+      if (!nome.trim() || !email.trim() || !cnpj.trim() || !telefone.trim() || !empresaId.trim()) {
         return reply.status(400).send({ 
           mensagem: "Por favor, preencher todos os campos obrigatórios",
           camposRecebidos: {
@@ -36,6 +36,7 @@ export async function createFornecedor(app: FastifyInstance) {
             email: !!email,
             cnpj: !!cnpj,
             telefone: !!telefone,
+            empresaId: !!empresaId,
           }
         });
       }
@@ -76,9 +77,9 @@ export async function createFornecedor(app: FastifyInstance) {
           telefone: telefone.trim(),
           categoria: categoria.trim(),
           foto: fotoUrl,
+          empresaId: empresaId.trim(),
         },
       });
-      
       await prisma.logs.create({
         data: {
           descricao: `Fornecedor criado: ${fornecedor.nome}`,

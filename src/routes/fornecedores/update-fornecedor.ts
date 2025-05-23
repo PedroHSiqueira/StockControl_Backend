@@ -28,15 +28,17 @@ export async function updateFornecedor(app: FastifyInstance) {
       const cnpj = fields['cnpj'] || '';
       const telefone = fields['telefone'] || '';
       const categoria = fields['categoria'] || '';
+      const empresaId = fields['empresaId'] || '';
 
-      if (!nome.trim() || !email.trim() || !cnpj.trim() || !telefone.trim()) {
+      if (!nome.trim() || !email.trim() || !cnpj.trim() || !telefone.trim() || !empresaId.trim()) {
         return reply.status(400).send({
           mensagem: "Por favor, preencher todos os campos obrigatórios",
           camposRecebidos: {
             nome: !!nome,
             email: !!email,
             cnpj: !!cnpj,
-            telefone: !!telefone
+            telefone: !!telefone,
+            empresaId: !!empresaId
           }
         });
       }
@@ -83,7 +85,8 @@ export async function updateFornecedor(app: FastifyInstance) {
           cnpj: cnpj.trim(),
           telefone: telefone.trim(),
           categoria: categoria.trim(),
-          foto: fotoUrl
+          foto: fotoUrl,
+          empresaId: empresaId.trim(),
         },
       });
 
