@@ -6,4 +6,18 @@ export async function getFornecedor(app: FastifyInstance) {
     const fornecedor = await prisma.fornecedor.findMany();
     reply.send(fornecedor);
   });
+
+  app.get("/fornecedor/contagem/:empresaId", async (request, reply) => {
+    const { empresaId } = request.params as { empresaId: string };
+    const contagem = await prisma.fornecedor.aggregate({
+      where: {
+      empresaId: empresaId,
+      },
+      _count: {
+      id: true,
+      },
+    });
+
+    reply.send(contagem);
+  });
 }
