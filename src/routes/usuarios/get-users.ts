@@ -8,7 +8,6 @@ export async function getUsers(app: FastifyInstance) {
     reply.send(users);
   });
 
-
   app.get("/usuario/:id", async (request, reply) => {
     const { id } = request.params as { id: string };
 
@@ -23,7 +22,17 @@ export async function getUsers(app: FastifyInstance) {
     }
 
     reply.send(user);
-  }
-  );
-}
+  });
 
+  app.get("/usuario/contagem/:empresaId", async (request, reply) => {
+    const { empresaId } = request.params as { empresaId: string };
+
+    const count = await prisma.usuario.count({
+      where: {
+        empresaId: String(empresaId),
+      },
+    });
+
+    return reply.send({ quantidade: count });
+  });
+}
