@@ -25,13 +25,19 @@ export async function getVendas(app: FastifyInstance) {
 
     const total = await prisma.venda.aggregate({
       where: {
-        empresaId: idEmpresa,
+      empresaId: idEmpresa,
       },
       _sum: {
-        valorVenda: true,
+      valorVenda: true,
+      },
+      _count: {
+      id: true,
       },
     });
 
-    return reply.status(200).send({total});
+    return reply.status(200).send({
+      total: total._sum.valorVenda,
+      quantidadeVendas: total._count.id,
+    });
   });
 }

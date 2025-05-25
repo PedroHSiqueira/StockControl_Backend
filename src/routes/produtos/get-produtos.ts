@@ -19,11 +19,17 @@ export async function getProduto(app: FastifyInstance) {
 
     const produtos = await prisma.produto.findMany({
       where: {
-        empresaId: empresaId,
+      empresaId: empresaId,
       },
       select: {
-        quantidade: true,
-        preco: true,
+      quantidade: true,
+      preco: true,
+      },
+    });
+
+    const count = await prisma.produto.count({
+      where: {
+      empresaId: empresaId,
       },
     });
 
@@ -34,6 +40,6 @@ export async function getProduto(app: FastifyInstance) {
     const contagemQuantidade = produtos.reduce((sum, produto) => sum + (produto.quantidade || 0), 0);
     const contagemPreco = produtos.reduce((sum, produto) => sum + (produto.preco || 0) * (produto.quantidade || 0), 0);
 
-    reply.send({ contagemQuantidade, contagemPreco });
+    reply.send({ contagemQuantidade, contagemPreco, count });
   });
 }
