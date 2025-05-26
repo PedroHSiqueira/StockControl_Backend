@@ -18,11 +18,12 @@ model Usuario {
   nome            String            @db.VarChar(60)
   email           String            @unique @db.VarChar(60)
   senha           String            @db.VarChar(60)
+  recuperacao     String?           @db.VarChar(6)
   tipo            TipoUsuario
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
   empresa         Empresa?          @relation(fields: [empresaId], references: [id])
   empresaId       String?           @db.VarChar(36)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
   Notificacao     Notificacao[]
   Logs            Logs[]
   Produto         Produto[]

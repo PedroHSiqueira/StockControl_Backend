@@ -80,4 +80,29 @@ export async function updateUser(app: FastifyInstance) {
 
     reply.send({ mensagem: "Usuario Vinculado a empresa com sucesso" });
   })
+
+  app.put("/usuario/esqueceu/:email",  async (request, reply) => {
+  const { email } = request.params as { email: string };
+  const { recuperacao } = request.body as { recuperacao: string };
+
+  try {
+    const cliente = await prisma.usuario.findUnique({
+      where: { email },
+    });
+
+    if (cliente == null) {
+      reply.send({ erro: "Usuário não encontrado" });
+      return;
+    }
+
+    await prisma.usuario.update({
+      where: { email },
+      data: { recuperacao: recuperacao },
+    });
+
+    reply.send({ mensagem: "Recuperação de senha enviada com sucesso" });
+  } catch (error) {
+    reply.status(500).send({ erro: "Erro ao atualizar a senha" });
+  }
+});
 }

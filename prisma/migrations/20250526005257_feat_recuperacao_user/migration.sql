@@ -16,10 +16,11 @@ CREATE TABLE "usuarios" (
     "nome" VARCHAR(60) NOT NULL,
     "email" VARCHAR(60) NOT NULL,
     "senha" VARCHAR(60) NOT NULL,
+    "recuperacao" VARCHAR(6),
     "tipo" "TipoUsuario" NOT NULL,
+    "empresaId" VARCHAR(36),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "empresaId" VARCHAR(36),
 
     CONSTRAINT "usuarios_pkey" PRIMARY KEY ("id")
 );
@@ -33,6 +34,7 @@ CREATE TABLE "fornecedores" (
     "email" VARCHAR(60) NOT NULL,
     "categoria" VARCHAR(60) NOT NULL,
     "foto" VARCHAR(255),
+    "empresaId" VARCHAR(36) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -118,6 +120,7 @@ CREATE TABLE "notificacoes" (
     "titulo" VARCHAR(60) NOT NULL,
     "descricao" VARCHAR(255) NOT NULL,
     "lida" BOOLEAN NOT NULL DEFAULT false,
+    "empresaId" VARCHAR(36),
     "usuarioId" VARCHAR(36),
     "conviteId" VARCHAR(36),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -136,6 +139,15 @@ CREATE TABLE "convites" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "convites_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "notificacoes_lidas" (
+    "notificacaoId" VARCHAR(36) NOT NULL,
+    "usuarioId" VARCHAR(36) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "notificacoes_lidas_pkey" PRIMARY KEY ("notificacaoId","usuarioId")
 );
 
 -- CreateTable
@@ -173,6 +185,9 @@ CREATE UNIQUE INDEX "notificacoes_conviteId_key" ON "notificacoes"("conviteId");
 ALTER TABLE "usuarios" ADD CONSTRAINT "usuarios_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "empresas"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "fornecedores" ADD CONSTRAINT "fornecedores_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "empresas"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "chaves_ativacao" ADD CONSTRAINT "chaves_ativacao_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "empresas"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -197,6 +212,9 @@ ALTER TABLE "vendas" ADD CONSTRAINT "vendas_produtoId_fkey" FOREIGN KEY ("produt
 ALTER TABLE "vendas" ADD CONSTRAINT "vendas_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "usuarios"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "notificacoes" ADD CONSTRAINT "notificacoes_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "empresas"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "notificacoes" ADD CONSTRAINT "notificacoes_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "usuarios"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -204,6 +222,12 @@ ALTER TABLE "notificacoes" ADD CONSTRAINT "notificacoes_conviteId_fkey" FOREIGN 
 
 -- AddForeignKey
 ALTER TABLE "convites" ADD CONSTRAINT "convites_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "empresas"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "notificacoes_lidas" ADD CONSTRAINT "notificacoes_lidas_notificacaoId_fkey" FOREIGN KEY ("notificacaoId") REFERENCES "notificacoes"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "notificacoes_lidas" ADD CONSTRAINT "notificacoes_lidas_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "usuarios"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "logs" ADD CONSTRAINT "logs_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "empresas"("id") ON DELETE SET NULL ON UPDATE CASCADE;
