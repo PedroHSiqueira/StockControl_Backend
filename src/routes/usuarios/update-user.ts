@@ -1,6 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { prisma } from "../../lib/prisma";
+import bcrypt from "bcrypt";
 
 export async function updateUser(app: FastifyInstance) {
   app.put("/usuario/:id", async (request, reply) => {
@@ -8,7 +9,7 @@ export async function updateUser(app: FastifyInstance) {
       nome: z.string().optional(),
       email: z.string().email().optional(),
       tipo: z.enum(["FUNCIONARIO", "ADMIN", "PROPRIETARIO"]).optional(),
-      empresaId: z.string().uuid().nullable().optional(), 
+      empresaId: z.string().uuid().nullable().optional(),
       empresa: z
         .object({
           nome: z.string().optional(),
@@ -21,7 +22,6 @@ export async function updateUser(app: FastifyInstance) {
         })
         .optional(),
     });
-    
 
     const { id } = request.params as { id: string };
     const { nome, email, tipo, empresa, empresaId } = updateBody.parse(request.body);
@@ -31,7 +31,7 @@ export async function updateUser(app: FastifyInstance) {
       updateData = {
         ...updateData,
         empresaId: null,
-        tipo: "FUNCIONARIO", 
+        tipo: "FUNCIONARIO",
       };
     } else {
       updateData = { ...updateData, empresaId };
@@ -79,30 +79,59 @@ export async function updateUser(app: FastifyInstance) {
     });
 
     reply.send({ mensagem: "Usuario Vinculado a empresa com sucesso" });
-  })
+  });
 
-  app.put("/usuario/esqueceu/:email",  async (request, reply) => {
-  const { email } = request.params as { email: string };
-  const { recuperacao } = request.body as { recuperacao: string };
+  app.put("/usuario/esqueceu/:email", async (request, reply) => {
+    const { email } = request.params as { email: string };
+    const { recuperacao } = request.body as { recuperacao: string };
 
-  try {
-    const cliente = await prisma.usuario.findUnique({
+    try {
+      const cliente = await prisma.usuario.findUnique({
+        where: { email },
+      });
+
+      if (cliente == null) {
+        reply.send({ erro: "Usuário não encontrado" });
+        return;
+      }
+
+      await prisma.usuario.update({
+        where: { email },
+        data: { recuperacao: recuperacao },
+      });
+
+      reply.send({ mensagem: "Recuperação de senha enviada com sucesso" });
+    } catch (error) {
+      reply.status(500).send({ erro: "Erro ao atualizar a senha" });
+    }
+  });
+
+  app.put("/recuperacao/alterar", async (request, reply) => {
+    const updateBody = z.object({
+      email: z.string().email(),
+      senha: z.string(),
+      recuperacao: z.string(),
+    });
+
+    const { email, senha, recuperacao } = updateBody.parse(request.body);
+    const usuario = await prisma.usuario.findUnique({
       where: { email },
     });
 
-    if (cliente == null) {
-      reply.send({ erro: "Usuário não encontrado" });
-      return;
+    if (!usuario) {
+      return reply.status(404).send({ mensagem: "Usuário não encontrado" });
     }
 
+    if (usuario.recuperacao !== recuperacao) {
+      return reply.status(400).send({ mensagem: "Código de recuperação inválido" });
+    }
+
+    const salt = bcrypt.genSaltSync(12);
+    const hash = bcrypt.hashSync(senha, salt);
     await prisma.usuario.update({
       where: { email },
-      data: { recuperacao: recuperacao },
+      data: { senha: hash, recuperacao: null },
     });
-
-    reply.send({ mensagem: "Recuperação de senha enviada com sucesso" });
-  } catch (error) {
-    reply.status(500).send({ erro: "Erro ao atualizar a senha" });
-  }
-});
+    reply.send({ mensagem: "Senha alterada com sucesso" });
+  });
 }
