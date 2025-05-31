@@ -37,6 +37,10 @@ import { getKey } from "./routes/chaves/get-chave";
 import fastifyMultipart from "@fastify/multipart";
 import { updateKey } from "./routes/chaves/update-chave";
 import { notificacoesLidas } from "./routes/notificacao/notificacoes-lidas";
+import { updateCliente } from "./routes/clientes/update-cliente";
+import { deleteCliente } from "./routes/clientes/delete-cliente";
+import { getCliente } from "./routes/clientes/get-cliente";
+import { createCliente } from "./routes/clientes/create-cliente";
 
 const app = fastify();
 
@@ -98,6 +102,12 @@ app.register(createConvite);
 app.register(getConvite);
 app.register(deleteConvite);
 app.register(updateConvite);
+
+// Rotas de Clientes
+app.register(createCliente);
+app.register(getCliente);
+app.register(deleteCliente);
+app.register(updateCliente);
 
 //Rotas de chaves
 app.register(createKey);
