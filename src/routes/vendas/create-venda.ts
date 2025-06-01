@@ -11,9 +11,10 @@ export async function createVenda(app: FastifyInstance) {
       valorVenda: z.number().min(0).optional(),
       valorCompra: z.number().min(0),
       usuarioId: z.string().optional(),
+      clienteId: z.string().optional(),
     });
 
-    const { empresaId, produtoId, quantidade, valorVenda, valorCompra, usuarioId } = criarVendaBody.parse(request.body);
+    const { empresaId, produtoId, quantidade, valorVenda, valorCompra, usuarioId, clienteId } = criarVendaBody.parse(request.body);
     const produto = await prisma.produto.findUnique({
       where: {
         id: produtoId,
@@ -28,7 +29,7 @@ export async function createVenda(app: FastifyInstance) {
         valorVenda: produto?.preco !== undefined ? produto.preco * quantidade : valorVenda ?? 0,
         valorCompra,
         usuarioId,
-        
+        clienteId
       },
     });
 
