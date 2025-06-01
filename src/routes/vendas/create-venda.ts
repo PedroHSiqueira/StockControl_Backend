@@ -11,7 +11,7 @@ export async function createVenda(app: FastifyInstance) {
       valorVenda: z.number().min(0).optional(),
       valorCompra: z.number().min(0),
       usuarioId: z.string().optional(),
-      clienteId: z.string().optional(),
+      clienteId: z.string().optional().nullable(),
     });
 
     const { empresaId, produtoId, quantidade, valorVenda, valorCompra, usuarioId, clienteId } = criarVendaBody.parse(request.body);
@@ -21,6 +21,12 @@ export async function createVenda(app: FastifyInstance) {
       },
     });
 
+    const cliente = clienteId ? await prisma.cliente.findUnique({
+      where: {
+        id: clienteId,
+      },
+    }) : null;
+
     const venda = await prisma.venda.create({
       data: {
         empresaId,
@@ -29,7 +35,7 @@ export async function createVenda(app: FastifyInstance) {
         valorVenda: produto?.preco !== undefined ? produto.preco * quantidade : valorVenda ?? 0,
         valorCompra,
         usuarioId,
-        clienteId
+        clienteId,
       },
     });
 
@@ -42,14 +48,14 @@ export async function createVenda(app: FastifyInstance) {
       },
     });
 
-     await prisma.logs.create({
-          data: {
-            descricao: `Produto Vendido: ${produto?.nome} | Quantidade: ${quantidade}`,
-            tipo: "BAIXA" as const,
-            empresaId: produto?.empresaId,
-            usuarioId: produto?.usuarioId,
-          }
-        });
+    await prisma.logs.create({
+      data: {
+        descricao: `Produto Vendido: ${produto?.nome} | Quantidade: ${quantidade} | Cliente: ${cliente?.nome || "Não informado"}`,
+        tipo: "BAIXA" as const,
+        empresaId: produto?.empresaId,
+        usuarioId: produto?.usuarioId,
+      }
+    });
 
     return reply.status(201).send({
       mensagem: "Venda criada com sucesso",
