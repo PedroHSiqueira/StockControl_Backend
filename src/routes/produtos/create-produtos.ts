@@ -9,7 +9,7 @@ const pump = promisify(pipeline);
 export async function createProduto(app: FastifyInstance) {
 
 
-  app.post("/produtos/verificar-estoque-empresa", async (request, reply) => {
+ app.post("/produtos/verificar-estoque-empresa", async (request, reply) => {
     const empresasComNotificacaoRecentemente = await prisma.notificacao.findMany({
       where: {
         titulo: "Alerta de Estoque",
@@ -54,21 +54,33 @@ export async function createProduto(app: FastifyInstance) {
         if (!empresa) continue;
 
         const titulo = "Alerta de Estoque";
-        let descricao = "Os seguintes produtos estão com estoque baixo:\n";
+        
+        const lotes = [];
+        for (let i = 0; i < produtosAlerta.length; i += 2) {
+          lotes.push(produtosAlerta.slice(i, i + 2));
+        }
 
-        produtosAlerta.forEach(produto => {
-          const estado = produto.quantidade < produto.quantidadeMin ? "CRÍTICO" : "ATENÇÃO";
-          descricao += `\n- ${produto.nome}: ${estado} (${produto.quantidade}/${produto.quantidadeMin})`;
-        });
+        for (const lote of lotes) {
+          let descricao = "Os seguintes produtos estão com estoque baixo:\n";
+          
+          lote.forEach(produto => {
+            const estado = produto.quantidade < produto.quantidadeMin ? "CRÍTICO" : "ATENÇÃO";
+            descricao += `\n- ${produto.nome}: ${estado} (${produto.quantidade}/${produto.quantidadeMin})`;
+          });
 
-        await prisma.notificacao.create({
-          data: {
-            titulo,
-            descricao: `Enviado por Sistema de Estoque: ${descricao}`,
-            lida: false,
-            empresa: { connect: { id: empresaId } }
+          if (lotes.length > 1) {
+            descricao += `\n\n(Parte ${lotes.indexOf(lote) + 1} de ${lotes.length})`;
           }
-        });
+
+          await prisma.notificacao.create({
+            data: {
+              titulo,
+              descricao: `Enviado por Sistema de Estoque: ${descricao}`,
+              lida: false,
+              empresa: { connect: { id: empresaId } }
+            }
+          });
+        }
       }
     }
 
