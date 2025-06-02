@@ -50,7 +50,7 @@ export async function createVenda(app: FastifyInstance) {
 
     await prisma.logs.create({
       data: {
-        descricao: `Produto Vendido: ${produto?.nome} | Quantidade: ${quantidade} | Cliente: ${cliente?.nome || "Não informado"}`,
+        descricao: `${produto?.nome} \n| Quantidade: ${quantidade} \n| Cliente: ${cliente ? cliente.nome : "Não Informado"} `,
         tipo: "BAIXA" as const,
         empresaId: produto?.empresaId,
         usuarioId: produto?.usuarioId,
