@@ -17,7 +17,7 @@ export async function deleteProduto(app: FastifyInstance) {
     });
 
     if (!produto) {
-      return reply.status(404).send({ mensagem: "Produto não encontrado" });
+      return reply.status(404).send({ mensagem: "O Produto não foi encontrado" });
     }
 
     await prisma.produto.delete({
