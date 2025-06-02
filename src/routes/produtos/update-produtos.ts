@@ -114,7 +114,7 @@ export async function updateProduto(app: FastifyInstance) {
 
       return reply.status(200).send(produtoAtualizado);
     } catch (error) {
-      console.error("Erro ao atualizar produto:", error);
+      console.error("Erro ao atualizar o produto:", error);
       return reply.status(500).send({
         mensagem: "Erro interno no servidor",
         error: error instanceof Error ? error.message : "Erro desconhecido",
