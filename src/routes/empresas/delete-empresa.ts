@@ -19,11 +19,8 @@ export async function deleteEmpresa(app: FastifyInstance) {
     }
 
     if (usuario.tipo === "PROPRIETARIO") {
-      await prisma.empresa.update({
+      await prisma.empresa.delete({
         where: { id: usuario.empresaId },
-        data: {
-          ativo: false,
-        },
       });
     }
 
@@ -35,6 +32,6 @@ export async function deleteEmpresa(app: FastifyInstance) {
       },
     });
 
-    return reply.status(204).send();
+    return reply.status(204).send(); 
   });
 }

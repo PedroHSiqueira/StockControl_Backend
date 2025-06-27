@@ -58,12 +58,11 @@ model Empresa {
   telefone      String?        @db.VarChar(15)
   endereco      String?        @db.VarChar(255)
   pais          String?        @db.VarChar(60)
-  estado        String?        @db.VarChar(25)
+  estado        String?        @db.VarChar(2)
   cidade        String?        @db.VarChar(60)
   cep           String?        @db.VarChar(10)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
-  ativo         Boolean        @default(true)
   ChaveAtivacao ChaveAtivacao?
   usuario       Usuario[]
   Produto       Produto[]
@@ -72,25 +71,25 @@ model Empresa {
   Venda         Venda[]
   Notificacao   Notificacao[]
   Fornecedor    Fornecedor[]
-  cliente       cliente[]
+  cliente cliente[]
 
   @@map("empresas")
 }
 
 model cliente {
-  id        String   @id @default(uuid()) @db.VarChar(36)
-  nome      String   @db.VarChar(60)
-  email     String?  @unique @db.VarChar(60)
-  telefone  String?  @db.VarChar(17)
-  endereco  String?  @db.VarChar(255)
-  cidade    String?  @db.VarChar(60)
-  estado    String?  @db.VarChar(25)
-  cep       String?  @db.VarChar(10)
-  empresa   Empresa  @relation(fields: [empresaId], references: [id])
-  empresaId String   @db.VarChar(36)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  Venda     Venda[]
+  id        String    @id @default(uuid()) @db.VarChar(36)
+  nome      String    @db.VarChar(60)
+  email     String?   @unique @db.VarChar(60)
+  telefone  String?   @db.VarChar(17)
+  endereco  String?   @db.VarChar(255)
+  cidade    String?   @db.VarChar(60)
+  estado    String?   @db.VarChar(2)
+  cep       String?   @db.VarChar(10)
+  empresa   Empresa   @relation(fields: [empresaId], references: [id])
+  empresaId String    @db.VarChar(36)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  Venda Venda[]
 
   @@map("clientes")
 }
