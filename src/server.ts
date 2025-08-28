@@ -93,7 +93,7 @@ app.register(getEmpresa);
 app.register(deleteEmpresa);
 app.register(updateEmpresa);
 
-// Rotas Notificações
+// Rotas de Notificações
 app.register(createNotificacao);
 app.register(getNotificacao);
 app.register(updateNotificacao);
