@@ -47,7 +47,7 @@ export async function catalogoEmpresa(app: FastifyInstance) {
           preco: true,
           foto: true,
           quantidade: true,
-          noCatalogo:true
+          noCatalogo: true
         }
       });
 
@@ -55,13 +55,16 @@ export async function catalogoEmpresa(app: FastifyInstance) {
 
       const produtosComVendas = await Promise.all(
         produtos.map(async (produto) => {
-          const vendasCount = await prisma.venda.count({
-            where: { produtoId: produto.id }
+          const vendas = await prisma.venda.findMany({
+            where: { produtoId: produto.id },
+            select: { quantidade: true }
           });
+          
+          const totalVendido = vendas.reduce((total, venda) => total + venda.quantidade, 0);
           
           return {
             ...produto,
-            vendas: vendasCount
+            vendas: totalVendido 
           };
         })
       );
