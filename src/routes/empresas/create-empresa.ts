@@ -3,14 +3,14 @@ import { prisma } from "../../lib/prisma";
 import cloudinary from '../../config/cloudinaryConfig';
 import { pipeline } from 'stream';
 import { promisify } from 'util';
-
+import slugify from 'slugify';
 const pump = promisify(pipeline);
 
 export async function createEmpresa(app: FastifyInstance) {
   app.post("/empresa", async (request: FastifyRequest, reply) => {
     try {
       const userId = request.headers["user-id"] as string | undefined;
-      
+
       if (!userId) {
         return reply.status(401).send({ mensagem: "Usuário não autenticado" });
       }
@@ -37,7 +37,7 @@ export async function createEmpresa(app: FastifyInstance) {
       const cep = fields['cep'] || '';
 
       if (!nome.trim() || !email.trim()) {
-        return reply.status(400).send({ 
+        return reply.status(400).send({
           mensagem: "Nome e email são obrigatórios",
           camposRecebidos: {
             nome: !!nome,
@@ -74,9 +74,25 @@ export async function createEmpresa(app: FastifyInstance) {
         }
       }
 
+      const slug = slugify(nome, {
+        lower: true,
+        strict: true,
+        locale: 'pt'
+      });
+
+      const slugExists = await prisma.empresa.findUnique({
+        where: { slug }
+      });
+
+      let finalSlug = slug;
+      if (slugExists) {
+        finalSlug = `${slug}-${Date.now()}`;
+      }
+
       const empresa = await prisma.empresa.create({
         data: {
           nome: nome.trim(),
+          slug: finalSlug,
           email: email.trim(),
           foto: fotoUrl,
           telefone: telefone.trim(),

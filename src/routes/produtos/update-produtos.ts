@@ -27,6 +27,7 @@ export async function updateProduto(app: FastifyInstance) {
       const precoStr = fields["preco"] || "0";
       const quantidadeStr = fields["quantidade"] || "0";
       const quantidadeMinStr = fields["quantidadeMin"];
+      const noCatalogoStr = fields["noCatalogo"] || "false";
       const categoriaId = fields["categoriaId"];
       const fornecedorId = fields["fornecedorId"];
       const usuarioId = fields["usuarioId"];
@@ -44,6 +45,7 @@ export async function updateProduto(app: FastifyInstance) {
       const preco = parseFloat(precoStr.replace(",", ".")) || 0;
       const quantidade = parseInt(quantidadeStr) || 0;
       const quantidadeMin = quantidadeMinStr ? parseInt(quantidadeMinStr) : null;
+      const noCatalogo = noCatalogoStr === "true";
 
       if (isNaN(preco) || isNaN(quantidade) || (quantidadeMinStr && isNaN(quantidadeMin as number))) {
         return reply.status(400).send({ mensagem: "Preço, quantidade ou quantidade mínima inválidos" });
@@ -94,6 +96,7 @@ export async function updateProduto(app: FastifyInstance) {
           preco,
           quantidade,
           quantidadeMin: quantidadeMin ?? undefined,
+          noCatalogo,
           foto: fotoUrl,
           categoriaId: categoriaId || null,
           fornecedorId: fornecedorId || null,

@@ -45,17 +45,18 @@ CREATE TABLE "fornecedores" (
 CREATE TABLE "empresas" (
     "id" VARCHAR(36) NOT NULL,
     "nome" VARCHAR(60) NOT NULL,
+    "slug" TEXT NOT NULL,
     "email" VARCHAR(60) NOT NULL,
     "foto" VARCHAR(255),
     "telefone" VARCHAR(15),
     "endereco" VARCHAR(255),
     "pais" VARCHAR(60),
-    "estado" VARCHAR(25),
+    "estado" VARCHAR(2),
     "cidade" VARCHAR(60),
     "cep" VARCHAR(10),
+    "catalogoPublico" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "ativo" BOOLEAN NOT NULL DEFAULT true,
 
     CONSTRAINT "empresas_pkey" PRIMARY KEY ("id")
 );
@@ -68,7 +69,7 @@ CREATE TABLE "clientes" (
     "telefone" VARCHAR(17),
     "endereco" VARCHAR(255),
     "cidade" VARCHAR(60),
-    "estado" VARCHAR(25),
+    "estado" VARCHAR(2),
     "cep" VARCHAR(10),
     "empresaId" VARCHAR(36) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -96,6 +97,7 @@ CREATE TABLE "produtos" (
     "quantidade" INTEGER NOT NULL,
     "quantidadeMin" INTEGER NOT NULL DEFAULT 0,
     "foto" VARCHAR(255),
+    "noCatalogo" BOOLEAN NOT NULL DEFAULT false,
     "usuarioId" VARCHAR(36),
     "fornecedorId" VARCHAR(36),
     "categoriaId" VARCHAR(36),
@@ -190,6 +192,9 @@ CREATE UNIQUE INDEX "fornecedores_cnpj_key" ON "fornecedores"("cnpj");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "fornecedores_email_key" ON "fornecedores"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "empresas_slug_key" ON "empresas"("slug");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "empresas_email_key" ON "empresas"("email");

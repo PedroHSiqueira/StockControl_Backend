@@ -8,8 +8,7 @@ const pump = promisify(pipeline);
 
 export async function createProduto(app: FastifyInstance) {
 
-
- app.post("/produtos/verificar-estoque-empresa", async (request, reply) => {
+  app.post("/produtos/verificar-estoque-empresa", async (request, reply) => {
     const empresasComNotificacaoRecentemente = await prisma.notificacao.findMany({
       where: {
         titulo: "Alerta de Estoque",
@@ -106,6 +105,7 @@ export async function createProduto(app: FastifyInstance) {
       const precoStr = fields["preco"] || "0";
       const quantidadeStr = fields["quantidade"] || "0";
       const quantidadeMinStr = fields["quantidadeMin"];
+      const noCatalogoStr = fields["noCatalogo"] || "false";
       const categoriaId = fields["categoriaId"];
       const fornecedorId = fields["fornecedorId"];
       const empresaId = fields["empresaId"];
@@ -125,6 +125,7 @@ export async function createProduto(app: FastifyInstance) {
       const preco = parseFloat(precoStr.replace(",", ".")) || 0;
       const quantidade = parseInt(quantidadeStr) || 0;
       const quantidadeMin = quantidadeMinStr ? parseInt(quantidadeMinStr) : null;
+      const noCatalogo = noCatalogoStr === "true";
 
       if (isNaN(preco)) {
         return reply.status(400).send({ mensagem: "Valor de preço inválido" });
@@ -170,6 +171,7 @@ export async function createProduto(app: FastifyInstance) {
           preco,
           quantidade,
           quantidadeMin: quantidadeMin ?? undefined,
+          noCatalogo,
           foto: fotoUrl,
           categoriaId: categoriaId || null,
           fornecedorId: fornecedorId || null,
@@ -177,7 +179,6 @@ export async function createProduto(app: FastifyInstance) {
           usuarioId,
         },
       });
-
 
       const logData = {
         empresaId: produto.empresaId,
@@ -199,6 +200,24 @@ export async function createProduto(app: FastifyInstance) {
         stack: process.env.NODE_ENV === "development" && error instanceof Error ? error.stack : undefined,
       });
     }
+  });
 
+  app.put("/produtos/:id/catalogo", async (request: FastifyRequest, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const { noCatalogo } = request.body as { noCatalogo: boolean };
+
+      const produto = await prisma.produto.update({
+        where: { id: Number(id) },
+        data: { noCatalogo }
+      });
+
+      return reply.send(produto);
+    } catch (error) {
+      console.error("Erro ao atualizar catálogo do produto:", error);
+      return reply.status(500).send({
+        mensagem: "Erro interno no servidor"
+      });
+    }
   });
 }

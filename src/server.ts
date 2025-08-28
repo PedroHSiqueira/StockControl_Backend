@@ -1,5 +1,7 @@
-import fastify from "fastify";
+import fastify, { FastifyRequest } from "fastify";
 import fastifyCors from "@fastify/cors";
+import { catalogoEmpresa } from './routes/catalogo/catalogo-empresa';
+import { toggleCatalogo } from './routes/catalogo/alterar-catalogo';
 import { createUser } from "./routes/usuarios/create-user";
 import { getUsers } from "./routes/usuarios/get-users";
 import { deleteUser } from "./routes/usuarios/delete-user";
@@ -47,18 +49,20 @@ const app = fastify();
 // Configuração do CORS
 app.register(fastifyCors, {
   origin: ["https://stockcontrol-six.vercel.app"],
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization", "user-id", "client_key"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "user-id", "client_key", "Accept"],
   credentials: true,
 });
 
 app.register(fastifyMultipart, {
   limits: {
-    fileSize: 10 * 1024 * 1024,
-    fields: 10,
+    fileSize: 20 * 1024 * 1024,
+    fields: 20,
   },
   attachFieldsToBody: false,
 });
+
+
 // Rotas de Usuarios
 app.register(createUser);
 app.register(getUsers);
@@ -96,7 +100,6 @@ app.register(updateNotificacao);
 app.register(deleteNotificacao);
 app.register(notificacoesLidas);
 
-
 //Rotas de convites
 app.register(createConvite);
 app.register(getConvite);
@@ -121,12 +124,13 @@ app.register(getVendas);
 //Rotas Login
 app.register(loginUser);
 
+//Rotas de Catalogo
+app.register(catalogoEmpresa);
+app.register(toggleCatalogo);
+
 // Rota Logs
 app.register(getLogs);
 
-app.get("/", async (request, reply) => {
-  return reply.status(200).send({ mensagem: "API Fastfy: StockControl" });
-});
 
 app.listen({ port: 3001 }).then(() => {
   console.log("Servidor rodando na porta 3001");
