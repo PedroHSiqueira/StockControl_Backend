@@ -1,5 +1,6 @@
 import fastify, { FastifyRequest } from "fastify";
 import fastifyCors from "@fastify/cors";
+import { exportRoutes } from "./routes/export/exportroutes";
 import { catalogoEmpresa } from './routes/catalogo/catalogo-empresa';
 import { toggleCatalogo } from './routes/catalogo/alterar-catalogo';
 import { createUser } from "./routes/usuarios/create-user";
@@ -68,6 +69,9 @@ app.register(createUser);
 app.register(getUsers);
 app.register(deleteUser);
 app.register(updateUser);
+
+// Rota de Exportação
+app.register(exportRoutes);
 
 // Rotas de Fornecedores
 app.register(createFornecedor);
