@@ -3,12 +3,54 @@ import { prisma } from "../../lib/prisma";
 import cloudinary from "../../config/cloudinaryConfig";
 import { pipeline } from "stream";
 import { promisify } from "util";
+import { usuarioTemPermissao } from "../../lib/permissaoUtils";
 
 const pump = promisify(pipeline);
 
 export async function updateProduto(app: FastifyInstance) {
   app.put("/produtos/:id", async (request: FastifyRequest, reply) => {
     try {
+      if (request.url.endsWith("/catalogo")) {
+        const userId = request.headers['user-id'] as string;
+
+        if (!userId) {
+          return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+        }
+
+        const temPermissao = await usuarioTemPermissao(userId, "produtos_editar");
+        if (!temPermissao) {
+          return reply.status(403).send({ mensagem: "Acesso negado. Permissão necessária: produtos_editar" });
+        }
+
+        const { id } = request.params as { id: string };
+        const { noCatalogo } = request.body as { noCatalogo: boolean };
+
+        const produtoExistente = await prisma.produto.findUnique({
+          where: { id: Number(id) },
+        });
+
+        if (!produtoExistente) {
+          return reply.status(404).send({ mensagem: "Produto não encontrado" });
+        }
+
+        const produtoAtualizado = await prisma.produto.update({
+          where: { id: Number(id) },
+          data: { noCatalogo },
+        });
+
+        return reply.status(200).send(produtoAtualizado);
+      }
+
+      const userId = request.headers['user-id'] as string;
+
+      if (!userId) {
+        return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+      }
+
+      const temPermissao = await usuarioTemPermissao(userId, "produtos_editar");
+      if (!temPermissao) {
+        return reply.status(403).send({ mensagem: "Acesso negado. Permissão necessária: produtos_editar" });
+      }
       const { id } = request.params as { id: string };
       const parts = request.parts();
       const fields: Record<string, any> = {};

@@ -1,6 +1,6 @@
 import fastify, { FastifyRequest } from "fastify";
 import fastifyCors from "@fastify/cors";
-import { exportRoutes } from "./routes/export/exportroutes";
+import { exportRoutes } from "./routes/export/exportDados";
 import { catalogoEmpresa } from './routes/catalogo/catalogo-empresa';
 import { toggleCatalogo } from './routes/catalogo/alterar-catalogo';
 import { createUser } from "./routes/usuarios/create-user";
@@ -44,6 +44,7 @@ import { updateCliente } from "./routes/clientes/update-cliente";
 import { deleteCliente } from "./routes/clientes/delete-cliente";
 import { getCliente } from "./routes/clientes/get-cliente";
 import { createCliente } from "./routes/clientes/create-cliente";
+import { permissoesRoutes } from "./routes/permissoes/permissoes";
 
 const app = fastify();
 
@@ -63,6 +64,7 @@ app.register(fastifyMultipart, {
   attachFieldsToBody: false,
 });
 
+app.register(permissoesRoutes);
 
 // Rotas de Usuarios
 app.register(createUser);

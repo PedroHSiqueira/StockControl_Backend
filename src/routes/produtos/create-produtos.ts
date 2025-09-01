@@ -3,6 +3,7 @@ import { prisma } from "../../lib/prisma";
 import cloudinary from "../../config/cloudinaryConfig";
 import { pipeline } from "stream";
 import { promisify } from "util";
+import { usuarioTemPermissao } from "../../lib/permissaoUtils";
 
 const pump = promisify(pipeline);
 
@@ -12,7 +13,7 @@ export async function createProduto(app: FastifyInstance) {
     const empresasComNotificacaoRecentemente = await prisma.notificacao.findMany({
       where: {
         titulo: "Alerta de Estoque",
-        createdAt: { gt: new Date(Date.now() - 60 * 60 * 1000) }, 
+        createdAt: { gt: new Date(Date.now() - 60 * 60 * 1000) },
         empresaId: { not: null }
       },
       select: {
@@ -53,7 +54,7 @@ export async function createProduto(app: FastifyInstance) {
         if (!empresa) continue;
 
         const titulo = "Alerta de Estoque";
-        
+
         const lotes = [];
         for (let i = 0; i < produtosAlerta.length; i += 2) {
           lotes.push(produtosAlerta.slice(i, i + 2));
@@ -61,7 +62,7 @@ export async function createProduto(app: FastifyInstance) {
 
         for (const lote of lotes) {
           let descricao = "Os seguintes produtos estão com estoque baixo:\n";
-          
+
           lote.forEach(produto => {
             const estado = produto.quantidade < produto.quantidadeMin ? "CRÍTICO" : "ATENÇÃO";
             descricao += `\n- ${produto.nome}: ${estado} (${produto.quantidade}/${produto.quantidadeMin})`;
@@ -88,7 +89,17 @@ export async function createProduto(app: FastifyInstance) {
 
   app.post("/produtos", async (request: FastifyRequest, reply) => {
     try {
+      const userId = request.headers['user-id'] as string;
+
+      if (!userId) {
+        return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+      }
+      const temPermissao = await usuarioTemPermissao(userId, "produtos_criar");
+      if (!temPermissao) {
+        return reply.status(403).send({ mensagem: "Acesso negado. Permissão necessária: produtos_criar" });
+      }
       const parts = request.parts();
+
       const fields: Record<string, any> = {};
       let fotoFile: any = null;
 
@@ -204,6 +215,17 @@ export async function createProduto(app: FastifyInstance) {
 
   app.put("/produtos/:id/catalogo", async (request: FastifyRequest, reply) => {
     try {
+
+      const userId = request.headers['user-id'] as string;
+
+      if (!userId) {
+        return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+      }
+      const temPermissao = await usuarioTemPermissao(userId, "produtos_editar");
+      if (!temPermissao) {
+        return reply.status(403).send({ mensagem: "Acesso negado. Permissão necessária: produtos_editar" });
+      }
+      
       const { id } = request.params as { id: string };
       const { noCatalogo } = request.body as { noCatalogo: boolean };
 

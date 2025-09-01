@@ -3,12 +3,23 @@ import { prisma } from "../../lib/prisma";
 import cloudinary from '../../config/cloudinaryConfig';
 import { pipeline } from 'stream';
 import { promisify } from 'util';
+import { usuarioTemPermissao } from "../../lib/permissaoUtils";
 
 const pump = promisify(pipeline);
 
 export async function updateFornecedor(app: FastifyInstance) {
   app.put("/fornecedor/:id", async (request: FastifyRequest, reply) => {
     try {
+      const userId = request.headers['user-id'] as string;
+
+      if (!userId) {
+        return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+      }
+
+      const temPermissao = await usuarioTemPermissao(userId, "fornecedores_editar");
+      if (!temPermissao) {
+        return reply.status(403).send({ mensagem: "Acesso negado. Permissão necessária: fornecedores_editar" });
+      }
       const { id } = request.params as { id: string };
 
       const parts = request.parts();
@@ -96,7 +107,7 @@ export async function updateFornecedor(app: FastifyInstance) {
           descricao: `Fornecedor Atualizado: ${fornecedor.nome}`,
           tipo: "ATUALIZACAO",
         },
-      }); 
+      });
 
       return reply.send(fornecedor);
     } catch (error) {

@@ -3,12 +3,23 @@ import { prisma } from "../../lib/prisma";
 import cloudinary from '../../config/cloudinaryConfig';
 import { pipeline } from 'stream';
 import { promisify } from 'util';
+import { usuarioTemPermissao } from "../../lib/permissaoUtils";
 
 const pump = promisify(pipeline);
 
 export async function createFornecedor(app: FastifyInstance) {
   app.post("/fornecedor", async (request: FastifyRequest, reply) => {
     try {
+        const userId = request.headers['user-id'] as string;
+      
+      if (!userId) {
+        return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+      }
+
+      const temPermissao = await usuarioTemPermissao(userId, "fornecedores_criar");
+      if (!temPermissao) {
+        return reply.status(403).send({ mensagem: "Acesso negado. Permissão necessária: fornecedores_criar" });
+      }
       const parts = request.parts();
       const fields: Record<string, any> = {};
       let fotoFile: any = null;

@@ -2,9 +2,20 @@ import { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { prisma } from "../../lib/prisma";
 import bcrypt from "bcrypt";
+import { usuarioTemPermissao } from "../../lib/permissaoUtils";
 
 export async function updateCliente(app: FastifyInstance) {
   app.put("/clientes/:id", async (request, reply) => {
+    const userId = request.headers['user-id'] as string;
+
+    if (!userId) {
+      return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+    }
+
+    const temPermissao = await usuarioTemPermissao(userId, "clientes_editar");
+    if (!temPermissao) {
+      return reply.status(403).send({ mensagem: "Acesso negado. Permissão necessária: clientes_editar" });
+    }
     const updateBody = z.object({
       nome: z.string().optional(),
       email: z.string().email().optional(),

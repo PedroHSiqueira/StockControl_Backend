@@ -11,6 +11,31 @@ CREATE TYPE "TipoLog" AS ENUM ('CRIACAO', 'ATUALIZACAO', 'EXCLUSAO', 'BAIXA');
 CREATE TYPE "Medidas" AS ENUM ('UNIDADE', 'LITRO', 'KILO');
 
 -- CreateTable
+CREATE TABLE "permissoes" (
+    "id" VARCHAR(36) NOT NULL,
+    "nome" VARCHAR(60) NOT NULL,
+    "descricao" VARCHAR(255) NOT NULL,
+    "chave" VARCHAR(100) NOT NULL,
+    "categoria" VARCHAR(50) NOT NULL DEFAULT 'GERAL',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "permissoes_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "usuario_permissoes" (
+    "id" VARCHAR(36) NOT NULL,
+    "usuarioId" VARCHAR(36) NOT NULL,
+    "permissaoId" VARCHAR(36) NOT NULL,
+    "concedida" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "usuario_permissoes_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "usuarios" (
     "id" VARCHAR(36) NOT NULL,
     "nome" VARCHAR(60) NOT NULL,
@@ -19,6 +44,7 @@ CREATE TABLE "usuarios" (
     "recuperacao" VARCHAR(6),
     "tipo" "TipoUsuario" NOT NULL,
     "empresaId" VARCHAR(36),
+    "permissoesPersonalizadas" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -185,6 +211,12 @@ CREATE TABLE "logs" (
 );
 
 -- CreateIndex
+CREATE UNIQUE INDEX "permissoes_chave_key" ON "permissoes"("chave");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "usuario_permissoes_usuarioId_permissaoId_key" ON "usuario_permissoes"("usuarioId", "permissaoId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "usuarios_email_key" ON "usuarios"("email");
 
 -- CreateIndex
@@ -207,6 +239,12 @@ CREATE UNIQUE INDEX "chaves_ativacao_empresaId_key" ON "chaves_ativacao"("empres
 
 -- CreateIndex
 CREATE UNIQUE INDEX "notificacoes_conviteId_key" ON "notificacoes"("conviteId");
+
+-- AddForeignKey
+ALTER TABLE "usuario_permissoes" ADD CONSTRAINT "usuario_permissoes_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "usuarios"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "usuario_permissoes" ADD CONSTRAINT "usuario_permissoes_permissaoId_fkey" FOREIGN KEY ("permissaoId") REFERENCES "permissoes"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "usuarios" ADD CONSTRAINT "usuarios_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "empresas"("id") ON DELETE SET NULL ON UPDATE CASCADE;

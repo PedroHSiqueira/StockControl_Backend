@@ -13,22 +13,52 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Permissao {
+  id               String             @id @default(uuid()) @db.VarChar(36)
+  nome             String             @db.VarChar(60)
+  descricao        String             @db.VarChar(255)
+  chave            String             @unique @db.VarChar(100)
+  categoria        String             @default("GERAL") @db.VarChar(50)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  UsuarioPermissao UsuarioPermissao[]
+
+  @@map("permissoes")
+}
+
+model UsuarioPermissao {
+  id          String    @id @default(uuid()) @db.VarChar(36)
+  usuarioId   String    @db.VarChar(36)
+  permissaoId String    @db.VarChar(36)
+  concedida   Boolean   @default(false)
+  usuario     Usuario   @relation(fields: [usuarioId], references: [id])
+  permissao   Permissao @relation(fields: [permissaoId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([usuarioId, permissaoId])
+  @@map("usuario_permissoes")
+}
+
 model Usuario {
-  id              String            @id @default(uuid()) @db.VarChar(36)
-  nome            String            @db.VarChar(60)
-  email           String            @unique @db.VarChar(60)
-  senha           String            @db.VarChar(60)
-  recuperacao     String?           @db.VarChar(6)
-  tipo            TipoUsuario
-  empresa         Empresa?          @relation(fields: [empresaId], references: [id])
-  empresaId       String?           @db.VarChar(36)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  Notificacao     Notificacao[]
-  Logs            Logs[]
-  Produto         Produto[]
-  Venda           Venda[]
-  NotificacaoLida NotificacaoLida[]
+  id                       String      @id @default(uuid()) @db.VarChar(36)
+  nome                     String      @db.VarChar(60)
+  email                    String      @unique @db.VarChar(60)
+  senha                    String      @db.VarChar(60)
+  recuperacao              String?     @db.VarChar(6)
+  tipo                     TipoUsuario
+  empresa                  Empresa?    @relation(fields: [empresaId], references: [id])
+  empresaId                String?     @db.VarChar(36)
+  permissoesPersonalizadas Boolean     @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  Notificacao Notificacao[]
+  Logs        Logs[]
+  Produto     Produto[]
+  Venda       Venda[]
+
+  NotificacaoLida  NotificacaoLida[]
+  UsuarioPermissao UsuarioPermissao[]
 
   @@map("usuarios")
 }
@@ -51,47 +81,47 @@ model Fornecedor {
 }
 
 model Empresa {
-  id            String         @id @default(uuid()) @db.VarChar(36)
-  nome          String         @db.VarChar(60)
-  slug          String         @unique
-  email         String         @unique @db.VarChar(60)
-  foto          String?        @db.VarChar(255)
-  telefone      String?        @db.VarChar(15)
-  endereco      String?        @db.VarChar(255)
-  pais          String?        @db.VarChar(60)
-  estado        String?        @db.VarChar(2)
-  cidade        String?        @db.VarChar(60)
-  cep           String?        @db.VarChar(10)
-  catalogoPublico Boolean      @default(false) 
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  ChaveAtivacao ChaveAtivacao?
-  usuario       Usuario[]
-  Produto       Produto[]
-  Convite       Convite[]
-  Logs          Logs[]
-  Venda         Venda[]
-  Notificacao   Notificacao[]
-  Fornecedor    Fornecedor[]
-  cliente cliente[]
+  id              String         @id @default(uuid()) @db.VarChar(36)
+  nome            String         @db.VarChar(60)
+  slug            String         @unique
+  email           String         @unique @db.VarChar(60)
+  foto            String?        @db.VarChar(255)
+  telefone        String?        @db.VarChar(15)
+  endereco        String?        @db.VarChar(255)
+  pais            String?        @db.VarChar(60)
+  estado          String?        @db.VarChar(2)
+  cidade          String?        @db.VarChar(60)
+  cep             String?        @db.VarChar(10)
+  catalogoPublico Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  ChaveAtivacao   ChaveAtivacao?
+  usuario         Usuario[]
+  Produto         Produto[]
+  Convite         Convite[]
+  Logs            Logs[]
+  Venda           Venda[]
+  Notificacao     Notificacao[]
+  Fornecedor      Fornecedor[]
+  cliente         cliente[]
 
   @@map("empresas")
 }
 
 model cliente {
-  id        String    @id @default(uuid()) @db.VarChar(36)
-  nome      String    @db.VarChar(60)
-  email     String?   @unique @db.VarChar(60)
-  telefone  String?   @db.VarChar(17)
-  endereco  String?   @db.VarChar(255)
-  cidade    String?   @db.VarChar(60)
-  estado    String?   @db.VarChar(2)
-  cep       String?   @db.VarChar(10)
-  empresa   Empresa   @relation(fields: [empresaId], references: [id])
-  empresaId String    @db.VarChar(36)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  Venda Venda[]
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  nome      String   @db.VarChar(60)
+  email     String?  @unique @db.VarChar(60)
+  telefone  String?  @db.VarChar(17)
+  endereco  String?  @db.VarChar(255)
+  cidade    String?  @db.VarChar(60)
+  estado    String?  @db.VarChar(2)
+  cep       String?  @db.VarChar(10)
+  empresa   Empresa  @relation(fields: [empresaId], references: [id])
+  empresaId String   @db.VarChar(36)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Venda     Venda[]
 
   @@map("clientes")
 }
@@ -107,14 +137,14 @@ model ChaveAtivacao {
 }
 
 model Produto {
-  id            Int      @id @default(autoincrement())
-  nome          String   @db.VarChar(60)
-  descricao     String   @db.VarChar(255)
+  id            Int         @id @default(autoincrement())
+  nome          String      @db.VarChar(60)
+  descricao     String      @db.VarChar(255)
   preco         Float
   quantidade    Int
-  quantidadeMin Int      @default(0)
-  foto          String?  @db.VarChar(255)
-  noCatalogo    Boolean  @default(false) 
+  quantidadeMin Int         @default(0)
+  foto          String?     @db.VarChar(255)
+  noCatalogo    Boolean     @default(false)
   usuarioId     String?     @db.VarChar(36)
   usuario       Usuario?    @relation(fields: [usuarioId], references: [id])
   fornecedor    Fornecedor? @relation(fields: [fornecedorId], references: [id])
