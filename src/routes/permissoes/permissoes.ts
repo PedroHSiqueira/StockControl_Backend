@@ -7,7 +7,7 @@ export async function permissoesRoutes(app: FastifyInstance) {
       const permissoes = await prisma.permissao.findMany({
         orderBy: [{ categoria: "asc" }, { nome: "asc" }]
       });
-      
+
       const permissoesAgrupadas = permissoes.reduce((acc, permissao) => {
         if (!acc[permissao.categoria]) {
           acc[permissao.categoria] = [];
@@ -66,7 +66,7 @@ export async function permissoesRoutes(app: FastifyInstance) {
   app.put("/usuarios/:userId/permissoes", async (request, reply) => {
     try {
       const { userId } = request.params as { userId: string };
-      const { permissoes, ativarPersonalizacao } = request.body as { 
+      const { permissoes, ativarPersonalizacao } = request.body as {
         permissoes: { permissaoId: string; concedida: boolean }[];
         ativarPersonalizacao: boolean;
       };
@@ -103,7 +103,7 @@ export async function permissoesRoutes(app: FastifyInstance) {
         });
       }
 
-      return reply.send({ 
+      return reply.send({
         mensagem: "Permissões atualizadas com sucesso",
         permissoesPersonalizadas: ativarPersonalizacao
       });
@@ -115,8 +115,8 @@ export async function permissoesRoutes(app: FastifyInstance) {
 
   app.get("/usuarios/:userId/tem-permissao/:permissaoChave", async (request, reply) => {
     try {
-      const { userId, permissaoChave } = request.params as { 
-        userId: string; permissaoChave: string 
+      const { userId, permissaoChave } = request.params as {
+        userId: string; permissaoChave: string
       };
 
       const usuario = await prisma.usuario.findUnique({
@@ -134,14 +134,14 @@ export async function permissoesRoutes(app: FastifyInstance) {
 
       if (!usuario.permissoesPersonalizadas) {
         const permissoesPadrao = await getPermissoesPadraoPorTipo(usuario.tipo);
-        const temPermissao = permissoesPadrao.some(p => 
+        const temPermissao = permissoesPadrao.some(p =>
           p.chave === permissaoChave && p.concedida
         );
         return reply.send({ temPermissao });
       }
 
       const permissao = await prisma.permissao.findFirst({
-        where: { chave: permissaoChave } 
+        where: { chave: permissaoChave }
       });
 
       if (!permissao) {
@@ -168,9 +168,9 @@ export async function permissoesRoutes(app: FastifyInstance) {
 
   async function getPermissoesPadraoPorTipo(tipo: string) {
     const todasPermissoes = await prisma.permissao.findMany();
-    
+
     let permissoesPadrao: string[] = [];
-    
+
     switch (tipo) {
       case 'PROPRIETARIO':
         permissoesPadrao = todasPermissoes.map(p => p.chave);

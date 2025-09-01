@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { prisma } from "../../lib/prisma";
 import bcrypt from "bcrypt";
+import { usuarioTemPermissao } from "../../lib/permissaoUtils";
 
 export async function updateUser(app: FastifyInstance) {
   app.put("/usuario/:id", async (request, reply) => {
@@ -103,6 +104,83 @@ export async function updateUser(app: FastifyInstance) {
       reply.send({ mensagem: "Recuperação de senha enviada com sucesso" });
     } catch (error) {
       reply.status(500).send({ erro: "Erro ao atualizar a senha" });
+    }
+  });
+
+  app.put("/usuario/:id/remover-empresa", async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const userId = request.headers["user-id"] as string | undefined;
+
+      if (!userId) {
+        return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+      }
+
+      const temPermissao = await usuarioTemPermissao(userId, "usuarios_excluir");
+
+      if (!temPermissao) {
+        return reply.status(403).send({ mensagem: "Acesso negado. Permissão necessária: usuarios_excluir" });
+      }
+
+      const usuarioSolicitante = await prisma.usuario.findUnique({
+        where: { id: userId },
+        include: { empresa: true }
+      });
+
+
+      if (!usuarioSolicitante) {
+        return reply.status(401).send({ mensagem: "Usuário solicitante não encontrado" });
+      }
+
+      const usuarioAlvo = await prisma.usuario.findUnique({
+        where: { id: id },
+        include: { empresa: true }
+      });
+
+
+      if (!usuarioAlvo) {
+        return reply.status(404).send({ mensagem: "Usuário não encontrado" });
+      }
+
+      if (usuarioSolicitante.tipo === "PROPRIETARIO") {
+        if (usuarioAlvo.empresaId !== usuarioSolicitante.empresaId) {
+          return reply.status(403).send({ mensagem: "Não é possível remover usuário de outra empresa" });
+        }
+      }
+      else if (usuarioSolicitante.tipo === "ADMIN") {
+        if (usuarioAlvo.empresaId !== usuarioSolicitante.empresaId) {
+          return reply.status(403).send({ mensagem: "Não é possível remover usuário de outra empresa" });
+        }
+        if (usuarioAlvo.tipo !== "FUNCIONARIO") {
+          return reply.status(403).send({ mensagem: "Administradores só podem remover funcionários" });
+        }
+      }
+      else {
+        return reply.status(403).send({ mensagem: "Acesso negado" });
+      }
+
+      const usuarioAtualizado = await prisma.usuario.update({
+        where: { id },
+        data: {
+          empresaId: null,
+          tipo: "FUNCIONARIO",
+          permissoesPersonalizadas: false
+        }
+      });
+
+      await prisma.usuarioPermissao.deleteMany({
+        where: {
+          usuarioId: id
+        }
+      });
+
+      reply.send({
+        mensagem: "Usuário removido da empresa com sucesso! Permissões resetadas.",
+        usuario: usuarioAtualizado
+      });
+    } catch (error) {
+      console.error("Erro detalhado ao remover usuário da empresa:", error);
+      reply.status(500).send({ mensagem: "Erro interno ao remover usuário" });
     }
   });
 

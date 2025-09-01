@@ -13,7 +13,6 @@ export class ExportService {
     static async exportData(entityType: string, options: ExportOptions) {
         const { startDate, endDate, empresaId } = options;
 
-        console.log(`Buscando dados para ${entityType}, empresa: ${empresaId}`);
 
         let data: any[];
         let fileName: string;
@@ -27,8 +26,6 @@ export class ExportService {
                 }
             })
         };
-
-        console.log(`Where clause: ${JSON.stringify(whereClause)}`);
 
         try {
             switch (entityType) {
@@ -80,8 +77,6 @@ export class ExportService {
                 default:
                     throw new Error('Tipo de entidade não suportado');
             }
-
-            console.log(`Encontrados ${data.length} registros para exportação`);
 
             return await ExcelExporter.export(entityType, data, fileName);
         } catch (error) {

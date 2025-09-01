@@ -149,7 +149,6 @@ const permissoes = [
 ];
 
 async function main() {
-  console.log("Iniciando população de permissões...");
 
   for (const permissao of permissoes) {
     await prisma.permissao.upsert({
@@ -157,7 +156,6 @@ async function main() {
       update: permissao,
       create: permissao
     });
-    console.log(`Permissão ${permissao.nome} processada`);
   }
 
   const usuarios = await prisma.usuario.findMany();
@@ -240,9 +238,6 @@ async function main() {
     }
   }
 
-  console.log("Permissões populadas com sucesso!");
-  console.log(`Total de permissões: ${todasPermissoes.length}`);
-  console.log(`Total de usuários processados: ${usuarios.length}`);
 }
 
 main()

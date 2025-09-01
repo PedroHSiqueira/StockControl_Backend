@@ -114,8 +114,28 @@ export async function createEmpresa(app: FastifyInstance) {
         data: {
           empresaId: empresa.id,
           tipo: "PROPRIETARIO",
+          permissoesPersonalizadas: true
         },
       });
+
+      const todasPermissoes = await prisma.permissao.findMany();
+
+      for (const permissao of todasPermissoes) {
+        await prisma.usuarioPermissao.upsert({
+          where: {
+            usuarioId_permissaoId: {
+              usuarioId: userId,
+              permissaoId: permissao.id
+            }
+          },
+          update: { concedida: true },
+          create: {
+            usuarioId: userId,
+            permissaoId: permissao.id,
+            concedida: true
+          }
+        });
+      }
 
       return reply.status(201).send(empresa);
     } catch (error) {

@@ -7,7 +7,6 @@ interface Header {
 
 export class ExcelExporter {
   static async export(entityType: string, data: any[], fileName: string) {
-    console.log(`Exportando ${data.length} registros do tipo ${entityType}`);
     
     try {
       const workbook = new ExcelJS.Workbook();
@@ -23,7 +22,6 @@ export class ExcelExporter {
 
       const buffer = await workbook.xlsx.writeBuffer();
       
-      console.log(`Exportação concluída com sucesso. Tamanho do buffer: ${buffer.byteLength} bytes`);
       
       return {
         buffer,

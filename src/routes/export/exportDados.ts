@@ -33,9 +33,6 @@ export async function exportRoutes(app: FastifyInstance) {
             const { entityType } = exportParams.parse(request.params);
             const { startDate, endDate, empresaId } = exportBody.parse(request.body);
 
-            console.log(`Iniciando exportação de ${entityType} para empresa ${empresaId}`);
-            console.log(`Período: ${startDate} até ${endDate}`);
-
             const result = await ExportService.exportData(entityType, {
                 startDate,
                 endDate,

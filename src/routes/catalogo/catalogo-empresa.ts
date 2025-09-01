@@ -6,7 +6,6 @@ export async function catalogoEmpresa(app: FastifyInstance) {
     try {
       const { slug } = request.params as { slug: string };
 
-      console.log('Buscando empresa com slug:', slug);
 
       const empresa = await prisma.empresa.findUnique({
         where: { slug },
@@ -20,7 +19,6 @@ export async function catalogoEmpresa(app: FastifyInstance) {
         }
       });
 
-      console.log('Empresa encontrada:', empresa);
 
       if (!empresa) {
         return reply.status(404).send({ 
@@ -51,7 +49,6 @@ export async function catalogoEmpresa(app: FastifyInstance) {
         }
       });
 
-      console.log('Produtos encontrados:', produtos.length);
 
       const produtosComVendas = await Promise.all(
         produtos.map(async (produto) => {

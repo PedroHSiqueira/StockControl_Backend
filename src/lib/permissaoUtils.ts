@@ -19,7 +19,8 @@ export async function usuarioTemPermissao(userId: string, permissaoChave: string
 
     if (!usuario.permissoesPersonalizadas) {
       const permissoesPadrao = await getPermissoesPadraoPorTipo(usuario.tipo);
-      return permissoesPadrao.includes(permissaoChave);
+      const permissaoConcedida = permissoesPadrao.find(p => p.chave === permissaoChave)?.concedida;
+      return permissaoConcedida || false;
     }
 
     const permissao = await prisma.permissao.findFirst({
@@ -44,29 +45,40 @@ export async function usuarioTemPermissao(userId: string, permissaoChave: string
   }
 }
 
-async function getPermissoesPadraoPorTipo(tipo: string): Promise<string[]> {
+async function getPermissoesPadraoPorTipo(tipo: string): Promise<{chave: string, concedida: boolean}[]> {
+  const todasPermissoes = await prisma.permissao.findMany();
+  
+  let permissoesPadrao: string[] = [];
+  
   switch (tipo) {
     case 'PROPRIETARIO':
-      const todasPermissoes = await prisma.permissao.findMany();
-      return todasPermissoes.map(p => p.chave);
+      permissoesPadrao = todasPermissoes.map(p => p.chave);
+      break;
     case 'ADMIN':
-      return [
+      permissoesPadrao = [
         'usuarios_criar', 'usuarios_editar', 'usuarios_visualizar',
         'produtos_criar', 'produtos_editar', 'produtos_visualizar',
         'clientes_criar', 'clientes_editar', 'clientes_visualizar',
         'fornecedores_criar', 'fornecedores_editar', 'fornecedores_visualizar',
         'vendas_realizar', 'vendas_visualizar'
       ];
+      break;
     case 'FUNCIONARIO':
-      return [
+      permissoesPadrao = [
         'produtos_visualizar',
         'clientes_visualizar',
-        'vendas_visualizar',
+        'vendas_realizar',
         'usuarios_visualizar'
       ];
+      break;
     default:
-      return [];
+      permissoesPadrao = [];
   }
+
+  return todasPermissoes.map(permissao => ({
+    chave: permissao.chave,
+    concedida: permissoesPadrao.includes(permissao.chave)
+  }));
 }
 
 export function verificarPermissao(permissaoChave: string) {
