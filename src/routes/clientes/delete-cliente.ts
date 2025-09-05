@@ -4,7 +4,7 @@ import { usuarioTemPermissao } from "../../lib/permissaoUtils";
 
 export async function deleteCliente(app: FastifyInstance) {
   app.delete("/clientes/:id", async (request, reply) => {
-    const userId = request.headers['user-id'] as string;
+    const userId = request.headers["user-id"] as string;
 
     if (!userId) {
       return reply.status(401).send({ mensagem: "Usuário não autenticado" });
@@ -31,4 +31,3 @@ export async function deleteCliente(app: FastifyInstance) {
     reply.status(200).send({ mensagem: "Cliente deletado com sucesso!" });
   });
 }
-

@@ -124,9 +124,8 @@ export async function updateUser(app: FastifyInstance) {
 
       const usuarioSolicitante = await prisma.usuario.findUnique({
         where: { id: userId },
-        include: { empresa: true }
+        include: { empresa: true },
       });
-
 
       if (!usuarioSolicitante) {
         return reply.status(401).send({ mensagem: "Usuário solicitante não encontrado" });
@@ -134,9 +133,8 @@ export async function updateUser(app: FastifyInstance) {
 
       const usuarioAlvo = await prisma.usuario.findUnique({
         where: { id: id },
-        include: { empresa: true }
+        include: { empresa: true },
       });
-
 
       if (!usuarioAlvo) {
         return reply.status(404).send({ mensagem: "Usuário não encontrado" });
@@ -146,16 +144,14 @@ export async function updateUser(app: FastifyInstance) {
         if (usuarioAlvo.empresaId !== usuarioSolicitante.empresaId) {
           return reply.status(403).send({ mensagem: "Não é possível remover usuário de outra empresa" });
         }
-      }
-      else if (usuarioSolicitante.tipo === "ADMIN") {
+      } else if (usuarioSolicitante.tipo === "ADMIN") {
         if (usuarioAlvo.empresaId !== usuarioSolicitante.empresaId) {
           return reply.status(403).send({ mensagem: "Não é possível remover usuário de outra empresa" });
         }
         if (usuarioAlvo.tipo !== "FUNCIONARIO") {
           return reply.status(403).send({ mensagem: "Administradores só podem remover funcionários" });
         }
-      }
-      else {
+      } else {
         return reply.status(403).send({ mensagem: "Acesso negado" });
       }
 
@@ -164,19 +160,19 @@ export async function updateUser(app: FastifyInstance) {
         data: {
           empresaId: null,
           tipo: "FUNCIONARIO",
-          permissoesPersonalizadas: false
-        }
+          permissoesPersonalizadas: false,
+        },
       });
 
       await prisma.usuarioPermissao.deleteMany({
         where: {
-          usuarioId: id
-        }
+          usuarioId: id,
+        },
       });
 
       reply.send({
         mensagem: "Usuário removido da empresa com sucesso! Permissões resetadas.",
-        usuario: usuarioAtualizado
+        usuario: usuarioAtualizado,
       });
     } catch (error) {
       console.error("Erro detalhado ao remover usuário da empresa:", error);

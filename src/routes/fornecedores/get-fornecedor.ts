@@ -11,10 +11,10 @@ export async function getFornecedor(app: FastifyInstance) {
     const { empresaId } = request.params as { empresaId: string };
     const contagem = await prisma.fornecedor.aggregate({
       where: {
-      empresaId: empresaId,
+        empresaId: empresaId,
       },
       _count: {
-      id: true,
+        id: true,
       },
     });
 

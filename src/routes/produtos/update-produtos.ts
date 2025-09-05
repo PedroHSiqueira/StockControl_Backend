@@ -11,7 +11,7 @@ export async function updateProduto(app: FastifyInstance) {
   app.put("/produtos/:id", async (request: FastifyRequest, reply) => {
     try {
       if (request.url.endsWith("/catalogo")) {
-        const userId = request.headers['user-id'] as string;
+        const userId = request.headers["user-id"] as string;
 
         if (!userId) {
           return reply.status(401).send({ mensagem: "Usuário não autenticado" });
@@ -41,7 +41,7 @@ export async function updateProduto(app: FastifyInstance) {
         return reply.status(200).send(produtoAtualizado);
       }
 
-      const userId = request.headers['user-id'] as string;
+      const userId = request.headers["user-id"] as string;
 
       if (!userId) {
         return reply.status(401).send({ mensagem: "Usuário não autenticado" });
@@ -154,7 +154,7 @@ export async function updateProduto(app: FastifyInstance) {
       };
 
       await prisma.logs.create({
-        data: logData
+        data: logData,
       });
 
       return reply.status(200).send(produtoAtualizado);

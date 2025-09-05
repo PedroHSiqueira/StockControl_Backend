@@ -19,17 +19,17 @@ export async function getProduto(app: FastifyInstance) {
 
     const produtos = await prisma.produto.findMany({
       where: {
-      empresaId: empresaId,
+        empresaId: empresaId,
       },
       select: {
-      quantidade: true,
-      preco: true,
+        quantidade: true,
+        preco: true,
       },
     });
 
     const count = await prisma.produto.count({
       where: {
-      empresaId: empresaId,
+        empresaId: empresaId,
       },
     });
 

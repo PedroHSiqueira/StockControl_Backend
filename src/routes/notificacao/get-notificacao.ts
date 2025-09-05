@@ -28,18 +28,15 @@ export async function getNotificacao(app: FastifyInstance) {
 
   app.get("/notificacao/:id", async (request, reply) => {
     const { id } = request.params as { id: string };
-  
+
     const usuario = await prisma.usuario.findUnique({
       where: { id },
-      select: { empresaId: true }
+      select: { empresaId: true },
     });
-  
+
     const notificacoes = await prisma.notificacao.findMany({
       where: {
-        OR: [
-          { usuarioId: id },
-          { empresaId: usuario?.empresaId }
-        ]
+        OR: [{ usuarioId: id }, { empresaId: usuario?.empresaId }],
       },
       include: {
         convite: {
@@ -55,24 +52,22 @@ export async function getNotificacao(app: FastifyInstance) {
         },
         NotificacaoLida: {
           where: {
-            usuarioId: id
-          }
+            usuarioId: id,
+          },
         },
       },
       orderBy: {
         createdAt: "desc",
       },
     });
-  
-    const notificacoesComStatus = notificacoes.map(notificacao => {
+
+    const notificacoesComStatus = notificacoes.map((notificacao) => {
       return {
         ...notificacao,
-        lida: notificacao.empresaId 
-          ? notificacao.NotificacaoLida.length > 0
-          : notificacao.lida
+        lida: notificacao.empresaId ? notificacao.NotificacaoLida.length > 0 : notificacao.lida,
       };
     });
-  
+
     reply.send(notificacoesComStatus);
   });
 }

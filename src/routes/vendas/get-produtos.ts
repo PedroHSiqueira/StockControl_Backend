@@ -14,7 +14,7 @@ export async function getVendas(app: FastifyInstance) {
         cliente: true,
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
     });
 

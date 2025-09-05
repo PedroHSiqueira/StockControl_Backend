@@ -5,7 +5,7 @@ export async function permissoesRoutes(app: FastifyInstance) {
   app.get("/permissoes", async (request, reply) => {
     try {
       const permissoes = await prisma.permissao.findMany({
-        orderBy: [{ categoria: "asc" }, { nome: "asc" }]
+        orderBy: [{ categoria: "asc" }, { nome: "asc" }],
       });
 
       const permissoesAgrupadas = permissoes.reduce((acc, permissao) => {
@@ -31,9 +31,9 @@ export async function permissoesRoutes(app: FastifyInstance) {
         where: { id: userId },
         include: {
           UsuarioPermissao: {
-            include: { permissao: true }
-          }
-        }
+            include: { permissao: true },
+          },
+        },
       });
 
       if (!usuario) {
@@ -44,18 +44,18 @@ export async function permissoesRoutes(app: FastifyInstance) {
         const permissoesPadrao = await getPermissoesPadraoPorTipo(usuario.tipo);
         return reply.send({
           permissoes: permissoesPadrao,
-          permissoesPersonalizadas: false
+          permissoesPersonalizadas: false,
         });
       }
 
-      const usuarioPermissoes = usuario.UsuarioPermissao.map(up => ({
+      const usuarioPermissoes = usuario.UsuarioPermissao.map((up) => ({
         ...up.permissao,
-        concedida: up.concedida
+        concedida: up.concedida,
       }));
 
       return reply.send({
         permissoes: usuarioPermissoes,
-        permissoesPersonalizadas: true
+        permissoesPersonalizadas: true,
       });
     } catch (error) {
       console.error("Erro ao buscar permissões do usuário:", error);
@@ -72,7 +72,7 @@ export async function permissoesRoutes(app: FastifyInstance) {
       };
 
       const usuario = await prisma.usuario.findUnique({
-        where: { id: userId }
+        where: { id: userId },
       });
 
       if (!usuario) {
@@ -82,7 +82,7 @@ export async function permissoesRoutes(app: FastifyInstance) {
       if (ativarPersonalizacao !== undefined) {
         await prisma.usuario.update({
           where: { id: userId },
-          data: { permissoesPersonalizadas: ativarPersonalizacao }
+          data: { permissoesPersonalizadas: ativarPersonalizacao },
         });
       }
 
@@ -91,21 +91,21 @@ export async function permissoesRoutes(app: FastifyInstance) {
           where: {
             usuarioId_permissaoId: {
               usuarioId: userId,
-              permissaoId: permissao.permissaoId
-            }
+              permissaoId: permissao.permissaoId,
+            },
           },
           update: { concedida: permissao.concedida },
           create: {
             usuarioId: userId,
             permissaoId: permissao.permissaoId,
-            concedida: permissao.concedida
-          }
+            concedida: permissao.concedida,
+          },
         });
       }
 
       return reply.send({
         mensagem: "Permissões atualizadas com sucesso",
-        permissoesPersonalizadas: ativarPersonalizacao
+        permissoesPersonalizadas: ativarPersonalizacao,
       });
     } catch (error) {
       console.error("Erro ao atualizar permissões:", error);
@@ -116,16 +116,17 @@ export async function permissoesRoutes(app: FastifyInstance) {
   app.get("/usuarios/:userId/tem-permissao/:permissaoChave", async (request, reply) => {
     try {
       const { userId, permissaoChave } = request.params as {
-        userId: string; permissaoChave: string
+        userId: string;
+        permissaoChave: string;
       };
 
       const usuario = await prisma.usuario.findUnique({
         where: { id: userId },
         include: {
           UsuarioPermissao: {
-            include: { permissao: true }
-          }
-        }
+            include: { permissao: true },
+          },
+        },
       });
 
       if (!usuario) {
@@ -134,14 +135,12 @@ export async function permissoesRoutes(app: FastifyInstance) {
 
       if (!usuario.permissoesPersonalizadas) {
         const permissoesPadrao = await getPermissoesPadraoPorTipo(usuario.tipo);
-        const temPermissao = permissoesPadrao.some(p =>
-          p.chave === permissaoChave && p.concedida
-        );
+        const temPermissao = permissoesPadrao.some((p) => p.chave === permissaoChave && p.concedida);
         return reply.send({ temPermissao });
       }
 
       const permissao = await prisma.permissao.findFirst({
-        where: { chave: permissaoChave }
+        where: { chave: permissaoChave },
       });
 
       if (!permissao) {
@@ -152,9 +151,9 @@ export async function permissoesRoutes(app: FastifyInstance) {
         where: {
           usuarioId_permissaoId: {
             usuarioId: userId,
-            permissaoId: permissao.id
-          }
-        }
+            permissaoId: permissao.id,
+          },
+        },
       });
 
       const temPermissao = usuarioPermissao?.concedida || false;
@@ -172,33 +171,22 @@ export async function permissoesRoutes(app: FastifyInstance) {
     let permissoesPadrao: string[] = [];
 
     switch (tipo) {
-      case 'PROPRIETARIO':
-        permissoesPadrao = todasPermissoes.map(p => p.chave);
+      case "PROPRIETARIO":
+        permissoesPadrao = todasPermissoes.map((p) => p.chave);
         break;
-      case 'ADMIN':
-        permissoesPadrao = [
-          'usuarios_criar', 'usuarios_visualizar',
-          'produtos_criar', 'produtos_editar', 'produtos_visualizar',
-          'clientes_criar', 'clientes_editar', 'clientes_visualizar',
-          'fornecedores_criar', 'fornecedores_editar', 'fornecedores_visualizar',
-          'vendas_realizar', 'vendas_visualizar'
-        ];
+      case "ADMIN":
+        permissoesPadrao = ["usuarios_criar", "usuarios_visualizar", "produtos_criar", "produtos_editar", "produtos_visualizar", "clientes_criar", "clientes_editar", "clientes_visualizar", "fornecedores_criar", "fornecedores_editar", "fornecedores_visualizar", "vendas_realizar", "vendas_visualizar"];
         break;
-      case 'FUNCIONARIO':
-        permissoesPadrao = [
-          'produtos_visualizar',
-          'clientes_visualizar',
-          'vendas_visualizar',
-          'usuarios_visualizar'
-        ];
+      case "FUNCIONARIO":
+        permissoesPadrao = ["produtos_visualizar", "clientes_visualizar", "vendas_visualizar", "usuarios_visualizar"];
         break;
       default:
         permissoesPadrao = [];
     }
 
-    return todasPermissoes.map(permissao => ({
+    return todasPermissoes.map((permissao) => ({
       ...permissao,
-      concedida: permissoesPadrao.includes(permissao.chave)
+      concedida: permissoesPadrao.includes(permissao.chave),
     }));
   }
 }

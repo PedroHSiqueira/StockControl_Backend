@@ -6,7 +6,6 @@ export async function catalogoEmpresa(app: FastifyInstance) {
     try {
       const { slug } = request.params as { slug: string };
 
-
       const empresa = await prisma.empresa.findUnique({
         where: { slug },
         select: {
@@ -15,28 +14,27 @@ export async function catalogoEmpresa(app: FastifyInstance) {
           foto: true,
           telefone: true,
           email: true,
-          catalogoPublico: true
-        }
+          catalogoPublico: true,
+        },
       });
 
-
       if (!empresa) {
-        return reply.status(404).send({ 
-          mensagem: "Empresa não encontrada" 
+        return reply.status(404).send({
+          mensagem: "Empresa não encontrada",
         });
       }
 
       if (!empresa.catalogoPublico) {
-        return reply.status(404).send({ 
-          mensagem: "Catálogo não está ativado para esta empresa" 
+        return reply.status(404).send({
+          mensagem: "Catálogo não está ativado para esta empresa",
         });
       }
 
       const produtos = await prisma.produto.findMany({
-        where: { 
+        where: {
           empresaId: empresa.id,
           noCatalogo: true,
-          quantidade: { gt: 0 }
+          quantidade: { gt: 0 },
         },
         select: {
           id: true,
@@ -45,23 +43,22 @@ export async function catalogoEmpresa(app: FastifyInstance) {
           preco: true,
           foto: true,
           quantidade: true,
-          noCatalogo: true
-        }
+          noCatalogo: true,
+        },
       });
-
 
       const produtosComVendas = await Promise.all(
         produtos.map(async (produto) => {
           const vendas = await prisma.venda.findMany({
             where: { produtoId: produto.id },
-            select: { quantidade: true }
+            select: { quantidade: true },
           });
-          
+
           const totalVendido = vendas.reduce((total, venda) => total + venda.quantidade, 0);
-          
+
           return {
             ...produto,
-            vendas: totalVendido 
+            vendas: totalVendido,
           };
         })
       );
@@ -71,14 +68,14 @@ export async function catalogoEmpresa(app: FastifyInstance) {
           nome: empresa.nome,
           foto: empresa.foto,
           telefone: empresa.telefone,
-          email: empresa.email
+          email: empresa.email,
         },
-        produtos: produtosComVendas
+        produtos: produtosComVendas,
       });
     } catch (error) {
       console.error("Erro ao buscar catálogo:", error);
       return reply.status(500).send({
-        mensagem: "Erro interno no servidor"
+        mensagem: "Erro interno no servidor",
       });
     }
   });
@@ -86,20 +83,20 @@ export async function catalogoEmpresa(app: FastifyInstance) {
   app.get("/empresa/slug/:slug", async (request: FastifyRequest, reply) => {
     try {
       const { slug } = request.params as { slug: string };
-      
+
       const empresa = await prisma.empresa.findUnique({
         where: { slug },
-        select: { 
-          id: true, 
+        select: {
+          id: true,
           nome: true,
-          catalogoPublico: true
-        }
+          catalogoPublico: true,
+        },
       });
 
-      return reply.send({ 
-        exists: !!empresa, 
+      return reply.send({
+        exists: !!empresa,
         empresa,
-        catalogoAtivo: empresa?.catalogoPublico || false
+        catalogoAtivo: empresa?.catalogoPublico || false,
       });
     } catch (error) {
       return reply.status(500).send({ mensagem: "Erro interno" });

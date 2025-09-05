@@ -5,7 +5,7 @@ import { usuarioTemPermissao } from "../../lib/permissaoUtils";
 export async function deleteProduto(app: FastifyInstance) {
   app.delete("/produtos/:id", async (request, reply) => {
     try {
-      const userId = request.headers['user-id'] as string;
+      const userId = request.headers["user-id"] as string;
       if (!userId) {
         return reply.status(401).send({ mensagem: "Usuário não autenticado" });
       }
@@ -16,7 +16,7 @@ export async function deleteProduto(app: FastifyInstance) {
       }
 
       const { id } = request.params as { id: string };
-      
+
       const produtoId = parseInt(id);
       if (isNaN(produtoId)) {
         return reply.status(400).send({ mensagem: "ID do produto inválido" });
@@ -32,7 +32,7 @@ export async function deleteProduto(app: FastifyInstance) {
 
       const usuario = await prisma.usuario.findUnique({
         where: { id: userId },
-        select: { empresaId: true }
+        select: { empresaId: true },
       });
 
       if (!usuario || usuario.empresaId !== produto.empresaId) {
@@ -40,12 +40,12 @@ export async function deleteProduto(app: FastifyInstance) {
       }
 
       const vendasVinculadas = await prisma.venda.findMany({
-        where: { produtoId: produtoId }
+        where: { produtoId: produtoId },
       });
 
       if (vendasVinculadas.length > 0) {
         await prisma.venda.deleteMany({
-          where: { produtoId: produtoId }
+          where: { produtoId: produtoId },
         });
 
         await prisma.logs.create({
@@ -54,7 +54,7 @@ export async function deleteProduto(app: FastifyInstance) {
             tipo: "EXCLUSAO",
             empresaId: produto.empresaId,
             usuarioId: userId,
-          }
+          },
         });
       }
 
@@ -67,23 +67,22 @@ export async function deleteProduto(app: FastifyInstance) {
           descricao: `Produto Excluído: ${produto.nome}`,
           tipo: "EXCLUSAO",
           empresaId: produto.empresaId,
-          usuarioId: userId, 
-        }
+          usuarioId: userId,
+        },
       });
 
-      return reply.status(200).send({ 
-        mensagem: `Produto excluído com sucesso. ${vendasVinculadas.length > 0 ? `${vendasVinculadas.length} venda(s) vinculada(s) também foram excluída(s).` : ''}`
+      return reply.status(200).send({
+        mensagem: `Produto excluído com sucesso. ${vendasVinculadas.length > 0 ? `${vendasVinculadas.length} venda(s) vinculada(s) também foram excluída(s).` : ""}`,
       });
-      
     } catch (error: any) {
       console.error("Erro ao excluir produto:", error);
-      
-      if (error.code === 'P2003') {
-        return reply.status(409).send({ 
-          mensagem: "Não foi possível excluir todas as relações do produto. Contate o administrador." 
+
+      if (error.code === "P2003") {
+        return reply.status(409).send({
+          mensagem: "Não foi possível excluir todas as relações do produto. Contate o administrador.",
         });
       }
-      
+
       return reply.status(500).send({ mensagem: "Erro interno no servidor" });
     }
   });

@@ -8,28 +8,27 @@ import { usuarioTemPermissao } from "../../lib/permissaoUtils";
 const pump = promisify(pipeline);
 
 export async function createProduto(app: FastifyInstance) {
-
   app.post("/produtos/verificar-estoque-empresa", async (request, reply) => {
     const empresasComNotificacaoRecentemente = await prisma.notificacao.findMany({
       where: {
         titulo: "Alerta de Estoque",
         createdAt: { gt: new Date(Date.now() - 60 * 60 * 1000) },
-        empresaId: { not: null }
+        empresaId: { not: null },
       },
       select: {
-        empresaId: true
+        empresaId: true,
       },
-      distinct: ['empresaId']
+      distinct: ["empresaId"],
     });
 
-    const empresasIdsComNotificacao = empresasComNotificacaoRecentemente.map(n => n.empresaId);
+    const empresasIdsComNotificacao = empresasComNotificacaoRecentemente.map((n) => n.empresaId);
 
     const produtos = await prisma.produto.findMany({
-      include: { empresa: true }
+      include: { empresa: true },
     });
 
     const produtosPorEmpresa: Record<string, any[]> = {};
-    produtos.forEach(produto => {
+    produtos.forEach((produto) => {
       if (!produto.empresaId) return;
       if (!produtosPorEmpresa[produto.empresaId]) {
         produtosPorEmpresa[produto.empresaId] = [];
@@ -40,15 +39,14 @@ export async function createProduto(app: FastifyInstance) {
     for (const [empresaId, produtosEmpresa] of Object.entries(produtosPorEmpresa)) {
       if (empresasIdsComNotificacao.includes(empresaId)) continue;
 
-      const produtosAlerta = produtosEmpresa.filter(produto => {
-        return produto.quantidadeMin > 0 &&
-          produto.quantidade < produto.quantidadeMin + 5;
+      const produtosAlerta = produtosEmpresa.filter((produto) => {
+        return produto.quantidadeMin > 0 && produto.quantidade < produto.quantidadeMin + 5;
       });
 
       if (produtosAlerta.length > 0) {
         const empresa = await prisma.empresa.findUnique({
           where: { id: empresaId },
-          include: { usuario: true }
+          include: { usuario: true },
         });
 
         if (!empresa) continue;
@@ -63,7 +61,7 @@ export async function createProduto(app: FastifyInstance) {
         for (const lote of lotes) {
           let descricao = "Os seguintes produtos estão com estoque baixo:\n";
 
-          lote.forEach(produto => {
+          lote.forEach((produto) => {
             const estado = produto.quantidade < produto.quantidadeMin ? "CRÍTICO" : "ATENÇÃO";
             descricao += `\n- ${produto.nome}: ${estado} (${produto.quantidade}/${produto.quantidadeMin})`;
           });
@@ -77,8 +75,8 @@ export async function createProduto(app: FastifyInstance) {
               titulo,
               descricao: `Enviado por Sistema de Estoque: ${descricao}`,
               lida: false,
-              empresa: { connect: { id: empresaId } }
-            }
+              empresa: { connect: { id: empresaId } },
+            },
           });
         }
       }
@@ -89,7 +87,7 @@ export async function createProduto(app: FastifyInstance) {
 
   app.post("/produtos", async (request: FastifyRequest, reply) => {
     try {
-      const userId = request.headers['user-id'] as string;
+      const userId = request.headers["user-id"] as string;
 
       if (!userId) {
         return reply.status(401).send({ mensagem: "Usuário não autenticado" });
@@ -199,7 +197,7 @@ export async function createProduto(app: FastifyInstance) {
       };
 
       await prisma.logs.create({
-        data: logData
+        data: logData,
       });
 
       return reply.status(201).send(produto);
@@ -215,8 +213,7 @@ export async function createProduto(app: FastifyInstance) {
 
   app.put("/produtos/:id/catalogo", async (request: FastifyRequest, reply) => {
     try {
-
-      const userId = request.headers['user-id'] as string;
+      const userId = request.headers["user-id"] as string;
 
       if (!userId) {
         return reply.status(401).send({ mensagem: "Usuário não autenticado" });
@@ -225,20 +222,20 @@ export async function createProduto(app: FastifyInstance) {
       if (!temPermissao) {
         return reply.status(403).send({ mensagem: "Acesso negado. Permissão necessária: produtos_editar" });
       }
-      
+
       const { id } = request.params as { id: string };
       const { noCatalogo } = request.body as { noCatalogo: boolean };
 
       const produto = await prisma.produto.update({
         where: { id: Number(id) },
-        data: { noCatalogo }
+        data: { noCatalogo },
       });
 
       return reply.send(produto);
     } catch (error) {
       console.error("Erro ao atualizar catálogo do produto:", error);
       return reply.status(500).send({
-        mensagem: "Erro interno no servidor"
+        mensagem: "Erro interno no servidor",
       });
     }
   });

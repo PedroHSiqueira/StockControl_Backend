@@ -27,7 +27,7 @@ export async function updateNotificacao(app: FastifyInstance) {
 
       const usuario = await prisma.usuario.findUnique({
         where: { id: usuarioId },
-        select: { empresaId: true }
+        select: { empresaId: true },
       });
 
       if (usuario?.empresaId) {
@@ -37,25 +37,25 @@ export async function updateNotificacao(app: FastifyInstance) {
             usuarioId: null,
             NOT: {
               NotificacaoLida: {
-                some: { usuarioId }
-              }
-            }
+                some: { usuarioId },
+              },
+            },
           },
-          select: { id: true }
+          select: { id: true },
         });
 
         await prisma.notificacaoLida.createMany({
-          data: notificacoesEmpresa.map(n => ({
+          data: notificacoesEmpresa.map((n) => ({
             notificacaoId: n.id,
-            usuarioId
+            usuarioId,
           })),
-          skipDuplicates: true
+          skipDuplicates: true,
         });
       }
 
-      return reply.send({ 
+      return reply.send({
         success: true,
-        message: "Todas as notificações foram marcadas como lidas." 
+        message: "Todas as notificações foram marcadas como lidas.",
       });
     }
 
@@ -64,16 +64,16 @@ export async function updateNotificacao(app: FastifyInstance) {
       include: {
         NotificacaoLida: {
           where: {
-            usuarioId
-          }
-        }
-      }
+            usuarioId,
+          },
+        },
+      },
     });
 
     if (!notificacao) {
-      return reply.status(404).send({ 
+      return reply.status(404).send({
         success: false,
-        message: "Notificação não encontrada" 
+        message: "Notificação não encontrada",
       });
     }
 
@@ -84,27 +84,27 @@ export async function updateNotificacao(app: FastifyInstance) {
             where: {
               notificacaoId_usuarioId: {
                 notificacaoId: notificacao.id,
-                usuarioId
-              }
+                usuarioId,
+              },
             },
             create: {
               notificacaoId: notificacao.id,
-              usuarioId
+              usuarioId,
             },
-            update: {}
+            update: {},
           });
         } else if (notificacao.NotificacaoLida.length > 0) {
           await prisma.notificacaoLida.deleteMany({
             where: {
               notificacaoId: notificacao.id,
-              usuarioId
-            }
+              usuarioId,
+            },
           });
         }
       } else {
         await prisma.notificacao.update({
           where: { id: String(id) },
-          data: { lida }
+          data: { lida },
         });
       }
     }
@@ -115,7 +115,7 @@ export async function updateNotificacao(app: FastifyInstance) {
         data: {
           ...(titulo && { titulo }),
           ...(descricao && { descricao }),
-        }
+        },
       });
     }
 
@@ -124,19 +124,17 @@ export async function updateNotificacao(app: FastifyInstance) {
       include: {
         NotificacaoLida: {
           where: {
-            usuarioId
-          }
-        }
-      }
+            usuarioId,
+          },
+        },
+      },
     });
 
-    const isLida = notificacaoAtualizada?.empresaId 
-      ? notificacaoAtualizada.NotificacaoLida.length > 0
-      : notificacaoAtualizada?.lida;
+    const isLida = notificacaoAtualizada?.empresaId ? notificacaoAtualizada.NotificacaoLida.length > 0 : notificacaoAtualizada?.lida;
 
     return reply.send({
       ...notificacaoAtualizada,
-      lida: isLida
+      lida: isLida,
     });
   });
 }

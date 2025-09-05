@@ -2,7 +2,7 @@ import { FastifyInstance } from "fastify";
 import { prisma } from "../../lib/prisma";
 
 export async function createKey(app: FastifyInstance) {
-  app.post('/chaves', async (request, reply) => {
+  app.post("/chaves", async (request, reply) => {
     const chave = crypto.randomUUID();
 
     const novaChave = await prisma.chaveAtivacao.create({

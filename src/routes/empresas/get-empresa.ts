@@ -7,7 +7,7 @@ export async function getEmpresa(app: FastifyInstance) {
       include: {
         Produto: true,
         ChaveAtivacao: true,
-      }
+      },
     });
     reply.send(empresas);
   });
@@ -51,5 +51,4 @@ export async function getEmpresa(app: FastifyInstance) {
 
     reply.send(empresa);
   });
-
 }

@@ -6,7 +6,7 @@ import { usuarioTemPermissao } from "../../lib/permissaoUtils";
 
 export async function updateCliente(app: FastifyInstance) {
   app.put("/clientes/:id", async (request, reply) => {
-    const userId = request.headers['user-id'] as string;
+    const userId = request.headers["user-id"] as string;
 
     if (!userId) {
       return reply.status(401).send({ mensagem: "Usuário não autenticado" });

@@ -6,16 +6,16 @@ import { usuarioTemPermissao } from "../../lib/permissaoUtils";
 
 export async function createCliente(app: FastifyInstance) {
   app.post("/clientes", async (request, reply) => {
-      const userId = request.headers['user-id'] as string;
-      
-      if (!userId) {
-        return reply.status(401).send({ mensagem: "Usuário não autenticado" });
-      }
+    const userId = request.headers["user-id"] as string;
 
-      const temPermissao = await usuarioTemPermissao(userId, "clientes_criar");
-      if (!temPermissao) {
-        return reply.status(403).send({ mensagem: "Acesso negado. Permissão necessária: clientes_criar" });
-      }
+    if (!userId) {
+      return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+    }
+
+    const temPermissao = await usuarioTemPermissao(userId, "clientes_criar");
+    if (!temPermissao) {
+      return reply.status(403).send({ mensagem: "Acesso negado. Permissão necessária: clientes_criar" });
+    }
     const createBody = z.object({
       nome: z.string(),
       email: z.string().email(),
@@ -39,10 +39,10 @@ export async function createCliente(app: FastifyInstance) {
         estado,
         cidade,
         cep,
-        empresaId
+        empresaId,
       },
     });
 
     reply.status(201).send({ mensagem: "Cliente criado com sucesso!", cliente: clienteCriado });
-  })
+  });
 }

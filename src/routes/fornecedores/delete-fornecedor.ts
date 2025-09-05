@@ -5,9 +5,9 @@ import { usuarioTemPermissao } from "../../lib/permissaoUtils";
 export async function deleteFornecedor(app: FastifyInstance) {
   app.delete("/fornecedor/:id", async (request: FastifyRequest, reply) => {
     try {
-      const userId = request.headers['user-id'] as string;
+      const userId = request.headers["user-id"] as string;
       const { id } = request.params as { id: string };
-      
+
       if (!userId) {
         return reply.status(401).send({ mensagem: "Usuário não autenticado" });
       }
@@ -19,7 +19,7 @@ export async function deleteFornecedor(app: FastifyInstance) {
 
       const usuario = await prisma.usuario.findUnique({
         where: { id: userId },
-        include: { empresa: true }
+        include: { empresa: true },
       });
 
       if (!usuario || !usuario.empresaId) {
@@ -27,7 +27,7 @@ export async function deleteFornecedor(app: FastifyInstance) {
       }
 
       const fornecedor = await prisma.fornecedor.findUnique({
-        where: { id }
+        where: { id },
       });
 
       if (!fornecedor) {
@@ -39,18 +39,18 @@ export async function deleteFornecedor(app: FastifyInstance) {
       }
 
       const produtosVinculados = await prisma.produto.findMany({
-        where: { fornecedorId: id }
+        where: { fornecedorId: id },
       });
 
       if (produtosVinculados.length > 0) {
         return reply.status(400).send({
           mensagem: "Não é possível excluir o fornecedor pois existem produtos vinculados a ele",
-          produtosCount: produtosVinculados.length
+          produtosCount: produtosVinculados.length,
         });
       }
 
       await prisma.fornecedor.delete({
-        where: { id }
+        where: { id },
       });
 
       await prisma.logs.create({
@@ -58,8 +58,8 @@ export async function deleteFornecedor(app: FastifyInstance) {
           descricao: `Fornecedor excluído: ${fornecedor.nome}`,
           tipo: "EXCLUSAO",
           usuarioId: userId,
-          empresaId: usuario.empresaId
-        }
+          empresaId: usuario.empresaId,
+        },
       });
 
       return reply.status(200).send({ mensagem: "Fornecedor excluído com sucesso" });
@@ -67,7 +67,7 @@ export async function deleteFornecedor(app: FastifyInstance) {
       console.error("Erro ao excluir fornecedor:", error);
       return reply.status(500).send({
         mensagem: "Erro interno no servidor",
-        error: error instanceof Error ? error.message : 'Erro desconhecido'
+        error: error instanceof Error ? error.message : "Erro desconhecido",
       });
     }
   });

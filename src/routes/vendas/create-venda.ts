@@ -5,7 +5,7 @@ import { usuarioTemPermissao } from "../../lib/permissaoUtils";
 
 export async function createVenda(app: FastifyInstance) {
   app.post("/venda", async (request, reply) => {
-    const userId = request.headers['user-id'] as string;
+    const userId = request.headers["user-id"] as string;
 
     if (!userId) {
       return reply.status(401).send({ mensagem: "Usuário não autenticado" });
@@ -32,11 +32,13 @@ export async function createVenda(app: FastifyInstance) {
       },
     });
 
-    const cliente = clienteId ? await prisma.cliente.findUnique({
-      where: {
-        id: clienteId,
-      },
-    }) : null;
+    const cliente = clienteId
+      ? await prisma.cliente.findUnique({
+          where: {
+            id: clienteId,
+          },
+        })
+      : null;
 
     const venda = await prisma.venda.create({
       data: {
@@ -65,7 +67,7 @@ export async function createVenda(app: FastifyInstance) {
         tipo: "BAIXA" as const,
         empresaId: produto?.empresaId,
         usuarioId: produto?.usuarioId,
-      }
+      },
     });
 
     return reply.status(201).send({

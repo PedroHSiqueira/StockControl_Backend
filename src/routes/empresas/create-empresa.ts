@@ -1,9 +1,9 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
 import { prisma } from "../../lib/prisma";
-import cloudinary from '../../config/cloudinaryConfig';
-import { pipeline } from 'stream';
-import { promisify } from 'util';
-import slugify from 'slugify';
+import cloudinary from "../../config/cloudinaryConfig";
+import { pipeline } from "stream";
+import { promisify } from "util";
+import slugify from "slugify";
 const pump = promisify(pipeline);
 
 export async function createEmpresa(app: FastifyInstance) {
@@ -20,29 +20,29 @@ export async function createEmpresa(app: FastifyInstance) {
       let fotoFile: any = null;
 
       for await (const part of parts) {
-        if (part.type === 'file' && part.fieldname === 'foto') {
+        if (part.type === "file" && part.fieldname === "foto") {
           fotoFile = part;
-        } else if (part.type === 'field') {
+        } else if (part.type === "field") {
           fields[part.fieldname] = part.value;
         }
       }
 
-      const nome = fields['nome'] || '';
-      const email = fields['email'] || '';
-      const telefone = fields['telefone'] || '';
-      const endereco = fields['endereco'] || '';
-      const pais = fields['pais'] || '';
-      const estado = fields['estado'] || '';
-      const cidade = fields['cidade'] || '';
-      const cep = fields['cep'] || '';
+      const nome = fields["nome"] || "";
+      const email = fields["email"] || "";
+      const telefone = fields["telefone"] || "";
+      const endereco = fields["endereco"] || "";
+      const pais = fields["pais"] || "";
+      const estado = fields["estado"] || "";
+      const cidade = fields["cidade"] || "";
+      const cep = fields["cep"] || "";
 
       if (!nome.trim() || !email.trim()) {
         return reply.status(400).send({
           mensagem: "Nome e email são obrigatórios",
           camposRecebidos: {
             nome: !!nome,
-            email: !!email
-          }
+            email: !!email,
+          },
         });
       }
 
@@ -51,18 +51,15 @@ export async function createEmpresa(app: FastifyInstance) {
       if (fotoFile) {
         try {
           const result = await new Promise((resolve, reject) => {
-            const uploadStream = cloudinary.uploader.upload_stream(
-              { resource_type: "auto" },
-              (error, result) => {
-                if (error) {
-                  console.error("Erro no upload:", error);
-                  resolve(null);
-                } else {
-                  resolve(result);
-                }
+            const uploadStream = cloudinary.uploader.upload_stream({ resource_type: "auto" }, (error, result) => {
+              if (error) {
+                console.error("Erro no upload:", error);
+                resolve(null);
+              } else {
+                resolve(result);
               }
-            );
-            pump(fotoFile.file, uploadStream).catch(err => {
+            });
+            pump(fotoFile.file, uploadStream).catch((err) => {
               console.error("Erro no pipeline:", err);
               resolve(null);
             });
@@ -77,11 +74,11 @@ export async function createEmpresa(app: FastifyInstance) {
       const slug = slugify(nome, {
         lower: true,
         strict: true,
-        locale: 'pt'
+        locale: "pt",
       });
 
       const slugExists = await prisma.empresa.findUnique({
-        where: { slug }
+        where: { slug },
       });
 
       let finalSlug = slug;
@@ -114,7 +111,7 @@ export async function createEmpresa(app: FastifyInstance) {
         data: {
           empresaId: empresa.id,
           tipo: "PROPRIETARIO",
-          permissoesPersonalizadas: true
+          permissoesPersonalizadas: true,
         },
       });
 
@@ -125,15 +122,15 @@ export async function createEmpresa(app: FastifyInstance) {
           where: {
             usuarioId_permissaoId: {
               usuarioId: userId,
-              permissaoId: permissao.id
-            }
+              permissaoId: permissao.id,
+            },
           },
           update: { concedida: true },
           create: {
             usuarioId: userId,
             permissaoId: permissao.id,
-            concedida: true
-          }
+            concedida: true,
+          },
         });
       }
 
@@ -142,8 +139,8 @@ export async function createEmpresa(app: FastifyInstance) {
       console.error("Erro ao criar empresa:", error);
       return reply.status(500).send({
         mensagem: "Erro interno no servidor",
-        error: error instanceof Error ? error.message : 'Erro desconhecido',
-        stack: process.env.NODE_ENV === 'development' && error instanceof Error ? error.stack : undefined
+        error: error instanceof Error ? error.message : "Erro desconhecido",
+        stack: process.env.NODE_ENV === "development" && error instanceof Error ? error.stack : undefined,
       });
     }
   });
