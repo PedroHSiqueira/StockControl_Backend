@@ -54,3 +54,6 @@ export { updateCliente } from "./clientes/update-cliente";
 export { deleteCliente } from "./clientes/delete-cliente";
 
 export { permissoesRoutes } from "./permissoes/permissoes";
+
+export { movimentacoesEstoqueRoutes } from "./movimentacoes/movimentacoes-estoque";
+

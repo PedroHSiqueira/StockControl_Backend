@@ -5,16 +5,12 @@ import { usuarioTemPermissao } from "../../lib/permissaoUtils";
 
 export async function createVenda(app: FastifyInstance) {
   app.post("/venda", async (request, reply) => {
-    const userId = request.headers["user-id"] as string;
-
-    if (!userId) {
-      return reply.status(401).send({ mensagem: "Usuário não autenticado" });
-    }
+    const userId = request.headers['user-id'] as string;
+    if (!userId) return reply.status(401).send({ mensagem: "Usuário não autenticado" });
 
     const temPermissao = await usuarioTemPermissao(userId, "vendas_realizar");
-    if (!temPermissao) {
-      return reply.status(403).send({ mensagem: "Acesso negado. Permissão necessária: vendas_realizar" });
-    }
+    if (!temPermissao) return reply.status(403).send({ mensagem: "Acesso negado" });
+
     const criarVendaBody = z.object({
       empresaId: z.string(),
       produtoId: z.number(),
@@ -25,54 +21,76 @@ export async function createVenda(app: FastifyInstance) {
       clienteId: z.string().optional().nullable(),
     });
 
-    const { empresaId, produtoId, quantidade, valorVenda, valorCompra, usuarioId, clienteId } = criarVendaBody.parse(request.body);
-    const produto = await prisma.produto.findUnique({
-      where: {
-        id: produtoId,
-      },
+    const { empresaId, produtoId, quantidade, valorCompra, usuarioId, clienteId } = criarVendaBody.parse(request.body);
+
+    const result = await prisma.$transaction(async (tx) => {
+      const produto = await tx.produto.findUnique({
+        where: { id: produtoId }
+      });
+
+      if (!produto) {
+        throw new Error("Produto não encontrado");
+      }
+
+      const movimentacoes = await tx.movimentacaoEstoque.findMany({
+        where: { produtoId }
+      });
+
+      const saldoAtual = movimentacoes.reduce((total, mov) => {
+        return mov.tipo === 'ENTRADA'
+          ? total + mov.quantidade
+          : total - mov.quantidade;
+      }, 0);
+
+      if (saldoAtual < quantidade) {
+        throw new Error("Estoque insuficiente");
+      }
+
+      const valorVendaCalculado = produto.preco * quantidade;
+
+      const venda = await tx.venda.create({
+        data: {
+          empresaId,
+          produtoId,
+          quantidade,
+          valorVenda: valorVendaCalculado, 
+          valorCompra,
+          usuarioId: usuarioId || userId,
+          clienteId,
+        },
+      });
+
+      await tx.movimentacaoEstoque.create({
+        data: {
+          produtoId,
+          tipo: 'SAIDA',
+          quantidade,
+          motivo: 'VENDA',
+          empresaId,
+          usuarioId: userId,
+          vendaId: venda.id,
+        },
+      });
+
+      return venda;
     });
 
-    const cliente = clienteId
-      ? await prisma.cliente.findUnique({
-          where: {
-            id: clienteId,
-          },
-        })
-      : null;
-
-    const venda = await prisma.venda.create({
-      data: {
-        empresaId,
-        produtoId,
-        quantidade,
-        valorVenda: produto?.preco !== undefined ? produto.preco * quantidade : valorVenda ?? 0,
-        valorCompra,
-        usuarioId,
-        clienteId,
-      },
-    });
-
-    await prisma.produto.update({
-      where: {
-        id: produtoId,
-      },
-      data: {
-        quantidade: produto?.quantidade ? produto.quantidade - quantidade : 0,
-      },
-    });
+    const produtoNome = result.produtoId
+      ? (await prisma.produto.findUnique({ where: { id: result.produtoId } }))?.nome
+      : undefined;
 
     await prisma.logs.create({
       data: {
-        descricao: `${produto?.nome} \n| Quantidade: ${quantidade} \n| Cliente: ${cliente ? cliente.nome : "Não Informado"} `,
-        tipo: "BAIXA" as const,
-        empresaId: produto?.empresaId,
-        usuarioId: produto?.usuarioId,
-      },
+      descricao: `Produto Vendido: ${produtoNome ?? 'Produto'} | Quantidade: ${quantidade}`,
+      tipo: "BAIXA",
+      empresaId,
+      usuarioId: userId,
+      }
     });
 
     return reply.status(201).send({
       mensagem: "Venda criada com sucesso",
-      venda,
+      venda: result,
     });
   });
 }

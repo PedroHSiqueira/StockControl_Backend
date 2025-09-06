@@ -55,7 +55,7 @@ async function getPermissoesPadraoPorTipo(tipo: string): Promise<{ chave: string
       permissoesPadrao = todasPermissoes.map((p) => p.chave);
       break;
     case "ADMIN":
-      permissoesPadrao = ["usuarios_criar", "usuarios_editar", "usuarios_visualizar", "produtos_criar", "produtos_editar", "produtos_visualizar", "clientes_criar", "clientes_editar", "clientes_visualizar", "fornecedores_criar", "fornecedores_editar", "fornecedores_visualizar", "vendas_realizar", "vendas_visualizar"];
+      permissoesPadrao = ["usuarios_criar", "usuarios_editar", "usuarios_visualizar", "produtos_criar", "produtos_editar", "produtos_visualizar", "clientes_criar", "clientes_editar", "clientes_visualizar", "fornecedores_criar", "fornecedores_editar", "fornecedores_visualizar", "vendas_realizar", "vendas_visualizar", "estoque_gerenciar", "inventario_visualizar"];
       break;
     case "FUNCIONARIO":
       permissoesPadrao = ["produtos_visualizar", "clientes_visualizar", "vendas_realizar", "usuarios_visualizar"];

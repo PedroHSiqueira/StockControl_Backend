@@ -95,6 +95,9 @@ app.register(Routes.toggleCatalogo);
 // Rota Logs
 app.register(Routes.getLogs);
 
+// Rota de movimentações de estoque
+app.register(Routes.movimentacoesEstoqueRoutes);
+
 app.get("/", async (request, reply) => {
   return reply.status(200).send({ mensagem: "API Fastfy: StockControl" });
 });

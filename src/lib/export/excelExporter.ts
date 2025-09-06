@@ -7,7 +7,6 @@ interface Header {
 
 export class ExcelExporter {
   static async export(entityType: string, data: any[], fileName: string) {
-    
     try {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet(entityType);
@@ -21,7 +20,6 @@ export class ExcelExporter {
       this.formatWorksheet(worksheet);
 
       const buffer = await workbook.xlsx.writeBuffer();
-      
       
       return {
         buffer,
@@ -45,6 +43,7 @@ export class ExcelExporter {
           { key: 'quantidadeMin', title: 'Estoque Mínimo' },
           { key: 'categoria.nome', title: 'Categoria' },
           { key: 'fornecedor.nome', title: 'Fornecedor' },
+          { key: 'noCatalogo', title: 'No Catálogo' },
           { key: 'createdAt', title: 'Data de Criação' }
         ];
 
@@ -88,6 +87,17 @@ export class ExcelExporter {
           { key: 'createdAt', title: 'Data de Cadastro' }
         ];
 
+      case 'movimentacoes':
+        return [
+          { key: 'produto.nome', title: 'Produto' },
+          { key: 'tipo', title: 'Tipo' },
+          { key: 'quantidade', title: 'Quantidade' },
+          { key: 'motivo', title: 'Motivo' },
+          { key: 'observacao', title: 'Observação' },
+          { key: 'usuario.nome', title: 'Usuário' },
+          { key: 'createdAt', title: 'Data da Movimentação' }
+        ];
+
       default:
         return [];
     }
@@ -115,7 +125,24 @@ export class ExcelExporter {
 
     headers.forEach(header => {
       const value = this.getNestedValue(item, header.key);
-      row.push(value);
+      
+      let formattedValue = value;
+      
+      if (header.key === 'noCatalogo') {
+        formattedValue = value ? 'Sim' : 'Não';
+      } else if (header.key === 'createdAt' && value) {
+        formattedValue = new Date(value).toLocaleString('pt-BR');
+      } else if (header.key === 'preco' && value) {
+        formattedValue = `R$ ${parseFloat(value).toFixed(2).replace('.', ',')}`;
+      } else if (header.key === 'valorVenda' && value) {
+        formattedValue = `R$ ${parseFloat(value).toFixed(2).replace('.', ',')}`;
+      } else if (header.key === 'valorCompra' && value) {
+        formattedValue = `R$ ${parseFloat(value).toFixed(2).replace('.', ',')}`;
+      } else if (header.key === 'tipo') {
+        formattedValue = value === 'ENTRADA' ? 'Entrada' : 'Saída';
+      }
+      
+      row.push(formattedValue !== null && formattedValue !== undefined ? formattedValue : '');
     });
 
     worksheet.addRow(row);
@@ -141,6 +168,16 @@ export class ExcelExporter {
       });
       
       column.width = maxLength < 10 ? 10 : maxLength + 2;
+    });
+
+    worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+      if (rowNumber === 1) return; 
+      
+      row.eachCell({ includeEmpty: false }, (cell, colNumber) => {
+        if (typeof cell.value === 'number') {
+          cell.numFmt = '#,##0.00';
+        }
+      });
     });
   }
 }

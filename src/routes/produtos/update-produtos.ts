@@ -136,7 +136,6 @@ export async function updateProduto(app: FastifyInstance) {
           nome: nome.trim(),
           descricao: descricao.trim(),
           preco,
-          quantidade,
           quantidadeMin: quantidadeMin ?? undefined,
           noCatalogo,
           foto: fotoUrl,

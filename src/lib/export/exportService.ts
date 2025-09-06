@@ -13,7 +13,6 @@ export class ExportService {
     static async exportData(entityType: string, options: ExportOptions) {
         const { startDate, endDate, empresaId } = options;
 
-
         let data: any[];
         let fileName: string;
 
@@ -72,6 +71,25 @@ export class ExportService {
                         where: { empresaId }
                     });
                     fileName = `usuarios_${empresaId}_${new Date().toISOString().split('T')[0]}`;
+                    break;
+
+                case 'movimentacoes':
+                    data = await prisma.movimentacaoEstoque.findMany({
+                        where: whereClause,
+                        include: {
+                            produto: true,
+                            usuario: true,
+                            venda: {
+                                include: {
+                                    cliente: true
+                                }
+                            }
+                        },
+                        orderBy: {
+                            createdAt: 'desc'
+                        }
+                    });
+                    fileName = `movimentacoes_estoque_${empresaId}_${new Date().toISOString().split('T')[0]}`;
                     break;
 
                 default:

@@ -41,26 +41,28 @@ model UsuarioPermissao {
 }
 
 model Usuario {
-  id                       String      @id @default(uuid()) @db.VarChar(36)
-  nome                     String      @db.VarChar(60)
-  email                    String      @unique @db.VarChar(60)
-  senha                    String      @db.VarChar(60)
-  recuperacao              String?     @db.VarChar(6)
+  id                       String        @id @default(uuid()) @db.VarChar(36)
+  nome                     String        @db.VarChar(60)
+  email                    String        @unique @db.VarChar(60)
+  senha                    String        @db.VarChar(60)
+  recuperacao              String?       @db.VarChar(6)
   tipo                     TipoUsuario
-  empresa                  Empresa?    @relation(fields: [empresaId], references: [id])
-  empresaId                String?     @db.VarChar(36)
-  permissoesPersonalizadas Boolean     @default(false)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  Notificacao Notificacao[]
-  Logs        Logs[]
-  Produto     Produto[]
-  Venda       Venda[]
+  empresa                  Empresa?      @relation(fields: [empresaId], references: [id])
+  empresaId                String?       @db.VarChar(36)
+  permissoesPersonalizadas Boolean       @default(false)
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
+  Notificacao              Notificacao[]
+  Logs                     Logs[]
+  Produto                  Produto[]
+  Venda                    Venda[]
 
   NotificacaoLida  NotificacaoLida[]
   UsuarioPermissao UsuarioPermissao[]
 
   @@map("usuarios")
+  MovimentacaoEstoque MovimentacaoEstoque[]
+  Inventario Inventario[]
 }
 
 model Fornecedor {
@@ -106,6 +108,8 @@ model Empresa {
   cliente         cliente[]
 
   @@map("empresas")
+  MovimentacaoEstoque MovimentacaoEstoque[]
+  Inventario Inventario[]
 }
 
 model cliente {
@@ -137,27 +141,28 @@ model ChaveAtivacao {
 }
 
 model Produto {
-  id            Int         @id @default(autoincrement())
-  nome          String      @db.VarChar(60)
-  descricao     String      @db.VarChar(255)
+  id            Int                   @id @default(autoincrement())
+  nome          String                @db.VarChar(60)
+  descricao     String                @db.VarChar(255)
   preco         Float
-  quantidade    Int
-  quantidadeMin Int         @default(0)
-  foto          String?     @db.VarChar(255)
-  noCatalogo    Boolean     @default(false)
-  usuarioId     String?     @db.VarChar(36)
-  usuario       Usuario?    @relation(fields: [usuarioId], references: [id])
-  fornecedor    Fornecedor? @relation(fields: [fornecedorId], references: [id])
-  fornecedorId  String?     @db.VarChar(36)
-  categoria     categoria?  @relation(fields: [categoriaId], references: [id])
-  categoriaId   String?     @db.VarChar(36)
-  empresa       Empresa?    @relation(fields: [empresaId], references: [id])
-  empresaId     String?     @db.VarChar(36)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  quantidadeMin Int                   @default(0)
+  foto          String?               @db.VarChar(255)
+  noCatalogo    Boolean               @default(false)
+  usuarioId     String?               @db.VarChar(36)
+  usuario       Usuario?              @relation(fields: [usuarioId], references: [id])
+  fornecedor    Fornecedor?           @relation(fields: [fornecedorId], references: [id])
+  fornecedorId  String?               @db.VarChar(36)
+  categoria     categoria?            @relation(fields: [categoriaId], references: [id])
+  categoriaId   String?               @db.VarChar(36)
+  empresa       Empresa?              @relation(fields: [empresaId], references: [id])
+  empresaId     String?               @db.VarChar(36)
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
   Venda         Venda[]
+  Movimentacoes MovimentacaoEstoque[]
 
   @@map("produtos")
+  ItemInventario ItemInventario[]
 }
 
 model Venda {
@@ -177,6 +182,7 @@ model Venda {
   updatedAt   DateTime @updatedAt
 
   @@map("vendas")
+  MovimentacaoEstoque MovimentacaoEstoque[]
 }
 
 model categoria {
@@ -244,6 +250,78 @@ model Logs {
   updatedAt DateTime @updatedAt
 
   @@map("logs")
+}
+
+model MovimentacaoEstoque {
+  id         String           @id @default(uuid()) @db.VarChar(36)
+  produto    Produto          @relation(fields: [produtoId], references: [id])
+  produtoId  Int
+  tipo       TipoMovimentacao
+  quantidade Int
+  motivo     String?          @db.VarChar(255)
+  observacao String?          @db.VarChar(500)
+  usuario    Usuario          @relation(fields: [usuarioId], references: [id])
+  usuarioId  String           @db.VarChar(36)
+  empresa    Empresa          @relation(fields: [empresaId], references: [id])
+  empresaId  String           @db.VarChar(36)
+  vendaId    Int?
+  venda      Venda?           @relation(fields: [vendaId], references: [id])
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@map("movimentacoes_estoque")
+}
+
+model Inventario {
+  id        String           @id @default(uuid()) @db.VarChar(36)
+  data      DateTime         @default(now())
+  descricao String?          @db.VarChar(255)
+  status    StatusInventario
+  empresa   Empresa          @relation(fields: [empresaId], references: [id])
+  empresaId String           @db.VarChar(36)
+  usuario   Usuario          @relation(fields: [usuarioId], references: [id])
+  usuarioId String           @db.VarChar(36)
+  itens     ItemInventario[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@map("inventarios")
+}
+
+model ItemInventario {
+  id                String     @id @default(uuid()) @db.VarChar(36)
+  inventario        Inventario @relation(fields: [inventarioId], references: [id])
+  inventarioId      String     @db.VarChar(36)
+  produto           Produto    @relation(fields: [produtoId], references: [id])
+  produtoId         Int
+  quantidadeSistema Int
+  quantidadeFisica  Int
+  diferenca         Int
+  observacao        String?    @db.VarChar(500)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  @@map("itens_inventario")
+}
+
+enum TipoMovimentacao {
+  ENTRADA
+  SAIDA
+}
+
+enum StatusInventario {
+  EM_ANDAMENTO
+  CONCLUIDO
+  CANCELADO
+}
+
+enum MotivoMovimentacao {
+  VENDA
+  COMPRA
+  AJUSTE
+  DEVOLUCAO
+  PERDA
+  INVENTARIO
 }
 
 enum TipoUsuario {

@@ -113,7 +113,7 @@ const permissoes = [
     categoria: "FORNECEDORES"
   },
 
-  // Vendas
+  // Gestão de Vendas
   {
     nome: "Realizar Vendas",
     descricao: "Permite realizar vendas",
@@ -145,6 +145,20 @@ const permissoes = [
     descricao: "Permite visualizar logs do sistema",
     chave: "logs_visualizar",
     categoria: "CONFIGURACOES"
+  },
+
+  // Estoque
+  {
+    chave: "estoque_gerenciar",
+    nome: "Gerenciar Estoque",
+    descricao: "Permite criar movimentações de estoque",
+    categoria: "ESTOQUE"
+  },
+  {
+    chave: "inventario_visualizar",
+    nome: "Visualizar Inventário",
+    descricao: "Permite Visualizar inventário do estoque",
+    categoria: "ESTOQUE"
   }
 ];
 
@@ -190,7 +204,7 @@ async function main() {
         'produtos_criar', 'produtos_editar', 'produtos_visualizar',
         'clientes_criar', 'clientes_editar', 'clientes_visualizar',
         'fornecedores_criar', 'fornecedores_editar', 'fornecedores_visualizar',
-        'vendas_realizar', 'vendas_visualizar'
+        'vendas_realizar', 'vendas_visualizar', 'estoque_gerenciar', 'inventario_visualizar'
       ];
 
       for (const permissao of todasPermissoes) {
@@ -215,7 +229,10 @@ async function main() {
       const permissoesPadraoFuncionario = [
         'produtos_visualizar',
         'clientes_visualizar',
-        'vendas_realizar'
+        'vendas_realizar',
+        'inventario_visualizar',
+        'usuarios_visualizar',
+        'fornecedores_visualizar'
       ];
 
       for (const permissao of todasPermissoes) {

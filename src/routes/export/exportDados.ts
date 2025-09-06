@@ -21,7 +21,7 @@ export async function exportRoutes(app: FastifyInstance) {
       }
 
       const exportParams = z.object({
-        entityType: z.enum(["produtos", "vendas", "clientes", "fornecedores", "usuarios"]),
+        entityType: z.enum(["produtos", "vendas", "clientes", "fornecedores", "usuarios", "movimentacoes"]),
       });
 
       const exportBody = z.object({

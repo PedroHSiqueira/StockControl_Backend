@@ -4,85 +4,105 @@ import cloudinary from "../../config/cloudinaryConfig";
 import { pipeline } from "stream";
 import { promisify } from "util";
 import { usuarioTemPermissao } from "../../lib/permissaoUtils";
+import { calcularSaldoProduto } from "../../lib/estoqueUtils";
 
 const pump = promisify(pipeline);
 
 export async function createProduto(app: FastifyInstance) {
+  
   app.post("/produtos/verificar-estoque-empresa", async (request, reply) => {
-    const empresasComNotificacaoRecentemente = await prisma.notificacao.findMany({
-      where: {
-        titulo: "Alerta de Estoque",
-        createdAt: { gt: new Date(Date.now() - 60 * 60 * 1000) },
-        empresaId: { not: null },
-      },
-      select: {
-        empresaId: true,
-      },
-      distinct: ["empresaId"],
-    });
-
-    const empresasIdsComNotificacao = empresasComNotificacaoRecentemente.map((n) => n.empresaId);
-
-    const produtos = await prisma.produto.findMany({
-      include: { empresa: true },
-    });
-
-    const produtosPorEmpresa: Record<string, any[]> = {};
-    produtos.forEach((produto) => {
-      if (!produto.empresaId) return;
-      if (!produtosPorEmpresa[produto.empresaId]) {
-        produtosPorEmpresa[produto.empresaId] = [];
-      }
-      produtosPorEmpresa[produto.empresaId].push(produto);
-    });
-
-    for (const [empresaId, produtosEmpresa] of Object.entries(produtosPorEmpresa)) {
-      if (empresasIdsComNotificacao.includes(empresaId)) continue;
-
-      const produtosAlerta = produtosEmpresa.filter((produto) => {
-        return produto.quantidadeMin > 0 && produto.quantidade < produto.quantidadeMin + 5;
+    try {
+      const empresasComNotificacaoRecentemente = await prisma.notificacao.findMany({
+        where: {
+          titulo: "Alerta de Estoque",
+          createdAt: { gt: new Date(Date.now() - 60 * 60 * 1000) },
+          empresaId: { not: null },
+        },
+        select: {
+          empresaId: true,
+        },
+        distinct: ["empresaId"],
       });
 
-      if (produtosAlerta.length > 0) {
-        const empresa = await prisma.empresa.findUnique({
-          where: { id: empresaId },
-          include: { usuario: true },
+      const empresasIdsComNotificacao = empresasComNotificacaoRecentemente.map((n) => n.empresaId);
+
+      const produtos = await prisma.produto.findMany({
+        include: {
+          empresa: true
+        },
+      });
+
+      const produtosComSaldo = await Promise.all(
+        produtos.map(async (produto) => {
+          const saldo = await calcularSaldoProduto(produto.id);
+
+          return {
+            ...produto,
+            quantidade: saldo 
+          };
+        })
+      );
+
+      const produtosPorEmpresa: Record<string, any[]> = {};
+      produtosComSaldo.forEach((produto) => {
+        if (!produto.empresaId) return;
+        if (!produtosPorEmpresa[produto.empresaId]) {
+          produtosPorEmpresa[produto.empresaId] = [];
+        }
+        produtosPorEmpresa[produto.empresaId].push(produto);
+      });
+
+      for (const [empresaId, produtosEmpresa] of Object.entries(produtosPorEmpresa)) {
+        if (empresasIdsComNotificacao.includes(empresaId)) continue;
+
+        const produtosAlerta = produtosEmpresa.filter((produto) => {
+          return produto.quantidadeMin > 0 && produto.quantidade < produto.quantidadeMin + 5;
         });
 
-        if (!empresa) continue;
-
-        const titulo = "Alerta de Estoque";
-
-        const lotes = [];
-        for (let i = 0; i < produtosAlerta.length; i += 2) {
-          lotes.push(produtosAlerta.slice(i, i + 2));
-        }
-
-        for (const lote of lotes) {
-          let descricao = "Os seguintes produtos estão com estoque baixo:\n";
-
-          lote.forEach((produto) => {
-            const estado = produto.quantidade < produto.quantidadeMin ? "CRÍTICO" : "ATENÇÃO";
-            descricao += `\n- ${produto.nome}: ${estado} (${produto.quantidade}/${produto.quantidadeMin})`;
+        if (produtosAlerta.length > 0) {
+          const empresa = await prisma.empresa.findUnique({
+            where: { id: empresaId },
+            include: { usuario: true },
           });
 
-          if (lotes.length > 1) {
-            descricao += `\n\n(Parte ${lotes.indexOf(lote) + 1} de ${lotes.length})`;
+          if (!empresa) continue;
+
+          const titulo = "Alerta de Estoque";
+
+          const lotes = [];
+          for (let i = 0; i < produtosAlerta.length; i += 2) {
+            lotes.push(produtosAlerta.slice(i, i + 2));
           }
 
-          await prisma.notificacao.create({
-            data: {
-              titulo,
-              descricao: `Enviado por Sistema de Estoque: ${descricao}`,
-              lida: false,
-              empresa: { connect: { id: empresaId } },
-            },
-          });
+          for (const lote of lotes) {
+            let descricao = "Os seguintes produtos estão com estoque baixo:\n";
+
+            lote.forEach((produto) => {
+              const estado = produto.quantidade < produto.quantidadeMin ? "CRÍTICO" : "ATENÇÃO";
+              descricao += `\n- ${produto.nome}: ${estado} (${produto.quantidade}/${produto.quantidadeMin})`;
+            });
+
+            if (lotes.length > 1) {
+              descricao += `\n\n(Parte ${lotes.indexOf(lote) + 1} de ${lotes.length})`;
+            }
+
+            await prisma.notificacao.create({
+              data: {
+                titulo,
+                descricao: `Enviado por Sistema de Estoque: ${descricao}`,
+                lida: false,
+                empresa: { connect: { id: empresaId } },
+              },
+            });
+          }
         }
       }
-    }
 
-    reply.send({ mensagem: "Verificação de estoque concluída" });
+      reply.send({ mensagem: "Verificação de estoque concluída" });
+    } catch (error) {
+      console.error("Erro na verificação de estoque:", error);
+      reply.status(500).send({ mensagem: "Erro interno no servidor" });
+    }
   });
 
   app.post("/produtos", async (request: FastifyRequest, reply) => {
@@ -178,7 +198,6 @@ export async function createProduto(app: FastifyInstance) {
           nome: nome.trim(),
           descricao: descricao.trim(),
           preco,
-          quantidade,
           quantidadeMin: quantidadeMin ?? undefined,
           noCatalogo,
           foto: fotoUrl,

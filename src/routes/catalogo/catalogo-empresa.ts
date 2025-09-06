@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
 import { prisma } from "../../lib/prisma";
+import { calcularSaldoProduto } from "../../lib/estoqueUtils";
 
 export async function catalogoEmpresa(app: FastifyInstance) {
   app.get("/catalogo/:slug", async (request: FastifyRequest, reply) => {
@@ -34,7 +35,6 @@ export async function catalogoEmpresa(app: FastifyInstance) {
         where: {
           empresaId: empresa.id,
           noCatalogo: true,
-          quantidade: { gt: 0 },
         },
         select: {
           id: true,
@@ -42,13 +42,14 @@ export async function catalogoEmpresa(app: FastifyInstance) {
           descricao: true,
           preco: true,
           foto: true,
-          quantidade: true,
           noCatalogo: true,
         },
       });
 
-      const produtosComVendas = await Promise.all(
+      const produtosComDados = await Promise.all(
         produtos.map(async (produto) => {
+          const saldo = await calcularSaldoProduto(produto.id);
+          
           const vendas = await prisma.venda.findMany({
             where: { produtoId: produto.id },
             select: { quantidade: true },
@@ -58,10 +59,13 @@ export async function catalogoEmpresa(app: FastifyInstance) {
 
           return {
             ...produto,
+            quantidade: saldo, 
             vendas: totalVendido,
           };
         })
       );
+
+      const produtosComEstoque = produtosComDados.filter(produto => produto.quantidade > 0);
 
       return reply.send({
         empresa: {
@@ -70,7 +74,7 @@ export async function catalogoEmpresa(app: FastifyInstance) {
           telefone: empresa.telefone,
           email: empresa.email,
         },
-        produtos: produtosComVendas,
+        produtos: produtosComEstoque,
       });
     } catch (error) {
       console.error("Erro ao buscar catálogo:", error);

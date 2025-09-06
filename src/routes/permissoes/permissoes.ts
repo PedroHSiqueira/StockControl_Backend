@@ -175,10 +175,10 @@ export async function permissoesRoutes(app: FastifyInstance) {
         permissoesPadrao = todasPermissoes.map((p) => p.chave);
         break;
       case "ADMIN":
-        permissoesPadrao = ["usuarios_criar", "usuarios_visualizar", "produtos_criar", "produtos_editar", "produtos_visualizar", "clientes_criar", "clientes_editar", "clientes_visualizar", "fornecedores_criar", "fornecedores_editar", "fornecedores_visualizar", "vendas_realizar", "vendas_visualizar"];
+        permissoesPadrao = ["usuarios_criar", "usuarios_visualizar", "produtos_criar", "produtos_editar", "produtos_visualizar", "clientes_criar", "clientes_editar", "clientes_visualizar", "fornecedores_criar", "fornecedores_editar", "fornecedores_visualizar", "vendas_realizar", "vendas_visualizar", "inventario_visualizar", "estoque_gerenciar"];
         break;
       case "FUNCIONARIO":
-        permissoesPadrao = ["produtos_visualizar", "clientes_visualizar", "vendas_visualizar", "usuarios_visualizar"];
+        permissoesPadrao = ["produtos_visualizar", "clientes_visualizar", "vendas_visualizar", "usuarios_visualizar", "fornecedores_visualizar", "inventario_visualizar"];
         break;
       default:
         permissoesPadrao = [];
