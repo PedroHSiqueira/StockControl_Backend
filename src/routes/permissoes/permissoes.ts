@@ -30,8 +30,10 @@ export async function permissoesRoutes(app: FastifyInstance) {
       const usuario = await prisma.usuario.findUnique({
         where: { id: userId },
         include: {
-          UsuarioPermissao: {
-            include: { permissao: true },
+          UsuarioPermissao: { 
+            include: { 
+              permissao: true
+            },
           },
         },
       });
@@ -53,8 +55,15 @@ export async function permissoesRoutes(app: FastifyInstance) {
         concedida: up.concedida,
       }));
 
+      const permissoesOrdenadas = usuarioPermissoes.sort((a, b) => {
+        if (a.categoria === b.categoria) {
+          return a.nome.localeCompare(b.nome);
+        }
+        return a.categoria.localeCompare(b.categoria);
+      });
+
       return reply.send({
-        permissoes: usuarioPermissoes,
+        permissoes: permissoesOrdenadas,
         permissoesPersonalizadas: true,
       });
     } catch (error) {

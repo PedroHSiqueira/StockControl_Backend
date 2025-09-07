@@ -35,6 +35,7 @@ export async function createEmpresa(app: FastifyInstance) {
       const estado = fields["estado"] || "";
       const cidade = fields["cidade"] || "";
       const cep = fields["cep"] || "";
+      const dominioSolicitado = fields["dominio"] || "";
 
       if (!nome.trim() || !email.trim()) {
         return reply.status(400).send({
@@ -43,6 +44,18 @@ export async function createEmpresa(app: FastifyInstance) {
             nome: !!nome,
             email: !!email,
           },
+        });
+      }
+
+      const emailExistente = await prisma.empresa.findUnique({
+        where: { email: email.trim().toLowerCase() },
+        select: { id: true }
+      });
+
+      if (emailExistente) {
+        return reply.status(400).send({
+          mensagem: "Este email já está em uso por outra empresa",
+          error: "EMAIL_ALREADY_EXISTS"
         });
       }
 
@@ -71,26 +84,35 @@ export async function createEmpresa(app: FastifyInstance) {
         }
       }
 
-      const slug = slugify(nome, {
-        lower: true,
-        strict: true,
-        locale: "pt",
-      });
+      let finalSlug = "";
+
+      if (dominioSolicitado && dominioSolicitado.trim()) {
+        finalSlug = slugify(dominioSolicitado, {
+          lower: true,
+          strict: true,
+          locale: "pt",
+        });
+      } else {
+        finalSlug = slugify(nome, {
+          lower: true,
+          strict: true,
+          locale: "pt",
+        });
+      }
 
       const slugExists = await prisma.empresa.findUnique({
-        where: { slug },
+        where: { slug: finalSlug },
       });
 
-      let finalSlug = slug;
       if (slugExists) {
-        finalSlug = `${slug}-${Date.now()}`;
+        finalSlug = `${finalSlug}-${Math.random().toString(36).substring(2, 9)}`;
       }
 
       const empresa = await prisma.empresa.create({
         data: {
           nome: nome.trim(),
           slug: finalSlug,
-          email: email.trim(),
+          email: email.trim().toLowerCase(),
           foto: fotoUrl,
           telefone: telefone.trim(),
           endereco: endereco.trim(),
@@ -134,9 +156,22 @@ export async function createEmpresa(app: FastifyInstance) {
         });
       }
 
-      return reply.status(201).send(empresa);
+      return reply.status(201).send({
+        ...empresa,
+        mensagem: "Empresa criada com sucesso!",
+        dominio: finalSlug,
+        urlCatalogo: `${process.env.NEXT_PUBLIC_URL}/catalogo/${finalSlug}`
+      });
     } catch (error) {
       console.error("Erro ao criar empresa:", error);
+      
+      if (typeof error === "object" && error !== null && "code" in error && (error as any).code === 'P2002') {
+        return reply.status(400).send({
+          mensagem: "Email ou domínio já está em uso",
+          error: "DUPLICATE_ENTRY"
+        });
+      }
+      
       return reply.status(500).send({
         mensagem: "Erro interno no servidor",
         error: error instanceof Error ? error.message : "Erro desconhecido",
