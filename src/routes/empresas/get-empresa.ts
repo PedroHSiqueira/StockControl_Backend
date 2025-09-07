@@ -80,6 +80,40 @@ export async function getEmpresa(app: FastifyInstance) {
     }
   });
 
+  app.get("/empresa/status-ativacao/:idEmpresa", async (request: FastifyRequest, reply: FastifyReply) => {
+    const { idEmpresa } = request.params as { idEmpresa: string };
+
+    try {
+      const empresa = await prisma.empresa.findUnique({
+        where: { id: idEmpresa },
+        include: {
+          ChaveAtivacao: {
+            select: {
+              chave: true,
+              utilizada: true,
+              dataUso: true
+            }
+          }
+        }
+      });
+
+      if (!empresa) {
+        return reply.status(404).send({ mensagem: "Empresa não encontrada" });
+      }
+
+      const ativada = !!empresa.ChaveAtivacao;
+
+      return reply.send({
+        ativada,
+        chave: empresa.ChaveAtivacao?.chave || null,
+        dataAtivacao: empresa.ChaveAtivacao?.dataUso || null
+      });
+    } catch (error) {
+      console.error("Erro ao verificar status:", error);
+      return reply.status(500).send({ mensagem: "Erro interno" });
+    }
+  });
+  
   app.get("/empresa/empresa/:idEmpresa", async (request: FastifyRequest, reply: FastifyReply) => {
     const { idEmpresa } = request.params as { idEmpresa: string };
 

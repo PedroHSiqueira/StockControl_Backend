@@ -57,12 +57,12 @@ model Usuario {
   Produto                  Produto[]
   Venda                    Venda[]
 
-  NotificacaoLida  NotificacaoLida[]
-  UsuarioPermissao UsuarioPermissao[]
+  NotificacaoLida     NotificacaoLida[]
+  UsuarioPermissao    UsuarioPermissao[]
+  MovimentacaoEstoque MovimentacaoEstoque[]
+  Inventario          Inventario[]
 
   @@map("usuarios")
-  MovimentacaoEstoque MovimentacaoEstoque[]
-  Inventario Inventario[]
 }
 
 model Fornecedor {
@@ -83,33 +83,33 @@ model Fornecedor {
 }
 
 model Empresa {
-  id              String         @id @default(uuid()) @db.VarChar(36)
-  nome            String         @db.VarChar(60)
-  slug            String         @unique
-  email           String         @unique @db.VarChar(60)
-  foto            String?        @db.VarChar(255)
-  telefone        String?        @db.VarChar(15)
-  endereco        String?        @db.VarChar(255)
-  pais            String?        @db.VarChar(60)
-  estado          String?        @db.VarChar(2)
-  cidade          String?        @db.VarChar(60)
-  cep             String?        @db.VarChar(10)
-  catalogoPublico Boolean        @default(false)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  ChaveAtivacao   ChaveAtivacao?
-  usuario         Usuario[]
-  Produto         Produto[]
-  Convite         Convite[]
-  Logs            Logs[]
-  Venda           Venda[]
-  Notificacao     Notificacao[]
-  Fornecedor      Fornecedor[]
-  cliente         cliente[]
+  id                  String                @id @default(uuid()) @db.VarChar(36)
+  nome                String                @db.VarChar(60)
+  slug                String                @unique
+  email               String                @unique @db.VarChar(60)
+  foto                String?               @db.VarChar(255)
+  telefone            String?               @db.VarChar(15)
+  endereco            String?               @db.VarChar(255)
+  pais                String?               @db.VarChar(60)
+  estado              String?               @db.VarChar(2)
+  cidade              String?               @db.VarChar(60)
+  cep                 String?               @db.VarChar(10)
+  catalogoPublico     Boolean               @default(false)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  ChaveAtivacao       ChaveAtivacao?
+  usuario             Usuario[]
+  Produto             Produto[]
+  Convite             Convite[]
+  Logs                Logs[]
+  Venda               Venda[]
+  Notificacao         Notificacao[]
+  Fornecedor          Fornecedor[]
+  cliente             cliente[]
+  MovimentacaoEstoque MovimentacaoEstoque[]
+  Inventario          Inventario[]
 
   @@map("empresas")
-  MovimentacaoEstoque MovimentacaoEstoque[]
-  Inventario Inventario[]
 }
 
 model cliente {
@@ -131,58 +131,60 @@ model cliente {
 }
 
 model ChaveAtivacao {
-  chave     String   @id @default(uuid()) @db.VarChar(36)
-  empresa   Empresa? @relation(fields: [empresaId], references: [id])
-  empresaId String?  @unique @db.VarChar(36)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  chave     String    @id @default(uuid()) @db.VarChar(36)
+  empresa   Empresa?  @relation(fields: [empresaId], references: [id])
+  empresaId String?   @unique @db.VarChar(36)
+  utilizada Boolean   @default(false) 
+  dataUso   DateTime? 
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@map("chaves_ativacao")
 }
 
 model Produto {
-  id            Int                   @id @default(autoincrement())
-  nome          String                @db.VarChar(60)
-  descricao     String                @db.VarChar(255)
-  preco         Float
-  quantidadeMin Int                   @default(0)
-  foto          String?               @db.VarChar(255)
-  noCatalogo    Boolean               @default(false)
-  usuarioId     String?               @db.VarChar(36)
-  usuario       Usuario?              @relation(fields: [usuarioId], references: [id])
-  fornecedor    Fornecedor?           @relation(fields: [fornecedorId], references: [id])
-  fornecedorId  String?               @db.VarChar(36)
-  categoria     categoria?            @relation(fields: [categoriaId], references: [id])
-  categoriaId   String?               @db.VarChar(36)
-  empresa       Empresa?              @relation(fields: [empresaId], references: [id])
-  empresaId     String?               @db.VarChar(36)
-  createdAt     DateTime              @default(now())
-  updatedAt     DateTime              @updatedAt
-  Venda         Venda[]
-  Movimentacoes MovimentacaoEstoque[]
+  id             Int                   @id @default(autoincrement())
+  nome           String                @db.VarChar(60)
+  descricao      String                @db.VarChar(255)
+  preco          Float
+  quantidadeMin  Int                   @default(0)
+  foto           String?               @db.VarChar(255)
+  noCatalogo     Boolean               @default(false)
+  usuarioId      String?               @db.VarChar(36)
+  usuario        Usuario?              @relation(fields: [usuarioId], references: [id])
+  fornecedor     Fornecedor?           @relation(fields: [fornecedorId], references: [id])
+  fornecedorId   String?               @db.VarChar(36)
+  categoria      categoria?            @relation(fields: [categoriaId], references: [id])
+  categoriaId    String?               @db.VarChar(36)
+  empresa        Empresa?              @relation(fields: [empresaId], references: [id])
+  empresaId      String?               @db.VarChar(36)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  Venda          Venda[]
+  Movimentacoes  MovimentacaoEstoque[]
+  ItemInventario ItemInventario[]
 
   @@map("produtos")
-  ItemInventario ItemInventario[]
 }
 
 model Venda {
-  id          Int      @id @default(autoincrement())
-  empresa     Empresa  @relation(fields: [empresaId], references: [id])
-  empresaId   String   @db.VarChar(36)
-  produto     Produto  @relation(fields: [produtoId], references: [id])
-  produtoId   Int
-  usuarioId   String?  @db.VarChar(36)
-  usuario     Usuario? @relation(fields: [usuarioId], references: [id])
-  clienteId   String?  @db.VarChar(36)
-  cliente     cliente? @relation(fields: [clienteId], references: [id])
-  quantidade  Int
-  valorVenda  Float
-  valorCompra Float
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                  Int                   @id @default(autoincrement())
+  empresa             Empresa               @relation(fields: [empresaId], references: [id])
+  empresaId           String                @db.VarChar(36)
+  produto             Produto               @relation(fields: [produtoId], references: [id])
+  produtoId           Int
+  usuarioId           String?               @db.VarChar(36)
+  usuario             Usuario?              @relation(fields: [usuarioId], references: [id])
+  clienteId           String?               @db.VarChar(36)
+  cliente             cliente?              @relation(fields: [clienteId], references: [id])
+  quantidade          Int
+  valorVenda          Float
+  valorCompra         Float
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  MovimentacaoEstoque MovimentacaoEstoque[]
 
   @@map("vendas")
-  MovimentacaoEstoque MovimentacaoEstoque[]
 }
 
 model categoria {

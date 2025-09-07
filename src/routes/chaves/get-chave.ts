@@ -6,12 +6,24 @@ export async function getKey(app: FastifyInstance) {
     try {
       const chaves = await prisma.chaveAtivacao.findMany({
         include: {
-          empresa: true,
+          empresa: {
+            select: {
+              id: true,
+              nome: true,
+              email: true
+            }
+          },
         },
+        orderBy: {
+          createdAt: 'desc'
+        }
       });
-      return chaves;
+      return reply.status(200).send(chaves);
     } catch (error) {
-      reply.status(500).send("Erro ao buscar chaves");
+      console.error("Erro ao buscar chaves:", error);
+      return reply.status(500).send({ 
+        mensagem: "Erro interno ao buscar chaves" 
+      });
     }
   });
 }
