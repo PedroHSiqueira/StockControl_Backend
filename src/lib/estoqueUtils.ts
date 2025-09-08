@@ -12,6 +12,11 @@ export async function calcularSaldoProduto(produtoId: number): Promise<number> {
   }, 0);
 }
 
+export function produtoCriadoHaMaisDeUmaHora(createdAt: Date): boolean {
+  const umaHoraAtras = new Date(Date.now() - 60 * 60 * 1000);
+  return new Date(createdAt) <= umaHoraAtras;
+}
+
 export async function calcularSaldosProdutos(produtoIds: number[]): Promise<Record<number, number>> {
   const movimentacoes = await prisma.movimentacaoEstoque.findMany({
     where: { produtoId: { in: produtoIds } }

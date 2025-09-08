@@ -9,7 +9,7 @@ import { calcularSaldoProduto } from "../../lib/estoqueUtils";
 const pump = promisify(pipeline);
 
 export async function createProduto(app: FastifyInstance) {
-  
+
   app.post("/produtos/verificar-estoque-empresa", async (request, reply) => {
     try {
       const empresasComNotificacaoRecentemente = await prisma.notificacao.findMany({
@@ -26,7 +26,14 @@ export async function createProduto(app: FastifyInstance) {
 
       const empresasIdsComNotificacao = empresasComNotificacaoRecentemente.map((n) => n.empresaId);
 
+      const umaHoraAtras = new Date(Date.now() - 60 * 60 * 1000);
+
       const produtos = await prisma.produto.findMany({
+        where: {
+          createdAt: {
+            lte: umaHoraAtras 
+          }
+        },
         include: {
           empresa: true
         },
@@ -38,7 +45,7 @@ export async function createProduto(app: FastifyInstance) {
 
           return {
             ...produto,
-            quantidade: saldo 
+            quantidade: saldo
           };
         })
       );
@@ -104,7 +111,6 @@ export async function createProduto(app: FastifyInstance) {
       reply.status(500).send({ mensagem: "Erro interno no servidor" });
     }
   });
-
   app.post("/produtos", async (request: FastifyRequest, reply) => {
     try {
       const userId = request.headers["user-id"] as string;

@@ -54,7 +54,10 @@ export async function exportRoutes(app: FastifyInstance) {
 
       await prisma.logs.create({
         data: {
-          descricao: `Exportação de ${entityType} | Usuário: ${usuarioNome} | Período: ${periodoDesc}`,
+          descricao: JSON.stringify({
+            entityType,
+            periodo: periodoDesc,
+          }),
           tipo: "CRIACAO",
           empresaId,
           usuarioId,

@@ -19,9 +19,10 @@ export async function createVenda(app: FastifyInstance) {
       valorCompra: z.number().min(0),
       usuarioId: z.string().optional(),
       clienteId: z.string().optional().nullable(),
+      clienteNome: z.string().optional().nullable(), 
     });
 
-    const { empresaId, produtoId, quantidade, valorCompra, usuarioId, clienteId } = criarVendaBody.parse(request.body);
+    const { empresaId, produtoId, quantidade, valorCompra, usuarioId, clienteId, clienteNome } = criarVendaBody.parse(request.body);
 
     const result = await prisma.$transaction(async (tx) => {
       const produto = await tx.produto.findUnique({
@@ -75,16 +76,26 @@ export async function createVenda(app: FastifyInstance) {
       return venda;
     });
 
-    const produtoNome = result.produtoId
-      ? (await prisma.produto.findUnique({ where: { id: result.produtoId } }))?.nome
-      : undefined;
+    const produto = await prisma.produto.findUnique({ 
+      where: { id: produtoId } 
+    });
+    
+    const clienteInfo = clienteId ? await prisma.cliente.findUnique({
+      where: { id: clienteId }
+    }) : null;
 
     await prisma.logs.create({
       data: {
-      descricao: `Produto Vendido: ${produtoNome ?? 'Produto'} | Quantidade: ${quantidade}`,
-      tipo: "BAIXA",
-      empresaId,
-      usuarioId: userId,
+        descricao: JSON.stringify({
+          entityType: "vendas",
+          action: "produto_vendido",
+          produtoNome: produto?.nome || 'Produto',
+          quantidade: quantidade,
+          clienteNome: clienteInfo?.nome || clienteNome || null
+        }),
+        tipo: "BAIXA",
+        empresaId,
+        usuarioId: userId,
       }
     });
 

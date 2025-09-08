@@ -39,6 +39,25 @@ export async function deleteProduto(app: FastifyInstance) {
         return reply.status(403).send({ mensagem: "Acesso negado ao produto" });
       }
 
+      const movimentacoesVinculadas = await prisma.movimentacaoEstoque.findMany({
+        where: { produtoId: produtoId },
+      });
+
+      if (movimentacoesVinculadas.length > 0) {
+        await prisma.movimentacaoEstoque.deleteMany({
+          where: { produtoId: produtoId },
+        });
+
+        await prisma.logs.create({
+          data: {
+            descricao: `Movimentações de estoque excluídas automaticamente para o produto: ${produto.nome} (${movimentacoesVinculadas.length} movimentações)`,
+            tipo: "EXCLUSAO",
+            empresaId: produto.empresaId,
+            usuarioId: userId,
+          },
+        });
+      }
+
       const vendasVinculadas = await prisma.venda.findMany({
         where: { produtoId: produtoId },
       });
@@ -58,6 +77,8 @@ export async function deleteProduto(app: FastifyInstance) {
         });
       }
 
+
+
       await prisma.produto.delete({
         where: { id: produtoId },
       });
@@ -72,7 +93,9 @@ export async function deleteProduto(app: FastifyInstance) {
       });
 
       return reply.status(200).send({
-        mensagem: `Produto excluído com sucesso. ${vendasVinculadas.length > 0 ? `${vendasVinculadas.length} venda(s) vinculada(s) também foram excluída(s).` : ""}`,
+        mensagem: `Produto excluído com sucesso. 
+                  ${movimentacoesVinculadas.length > 0 ? `${movimentacoesVinculadas.length} movimentação(ões) de estoque também foram excluída(s).` : ''}
+                  ${vendasVinculadas.length > 0 ? `${vendasVinculadas.length} venda(s) vinculada(s) também foram excluída(s).` : ''}`.trim(),
       });
     } catch (error: any) {
       console.error("Erro ao excluir produto:", error);
