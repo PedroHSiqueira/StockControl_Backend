@@ -145,7 +145,23 @@ export class ExcelExporter {
       row.push(formattedValue !== null && formattedValue !== undefined ? formattedValue : '');
     });
 
-    worksheet.addRow(row);
+    const addedRow = worksheet.addRow(row);
+    
+    this.formatQuantityCells(addedRow, entityType, headers);
+  }
+
+  private static formatQuantityCells(row: ExcelJS.Row, entityType: string, headers: Header[]) {
+    headers.forEach((header, columnIndex) => {
+      if (header.key === 'quantidade') {
+        const cell = row.getCell(columnIndex + 1);
+        const value = cell.value;
+        
+        if (typeof value === 'number') {
+          cell.numFmt = '0'; 
+          cell.alignment = { horizontal: 'right' };
+        }
+      }
+    });
   }
 
   private static getNestedValue(obj: any, path: string): any {
@@ -156,7 +172,7 @@ export class ExcelExporter {
   }
 
   private static formatWorksheet(worksheet: ExcelJS.Worksheet) {
-    worksheet.columns.forEach((column: any) => {
+    worksheet.columns.forEach((column: any, columnIndex) => {
       if (!column) return;
       
       let maxLength = 0;
@@ -167,15 +183,36 @@ export class ExcelExporter {
         }
       });
       
-      column.width = maxLength < 10 ? 10 : maxLength + 2;
+      const headers = ExcelExporter.getHeadersForEntity(worksheet.name);
+      const header = headers[columnIndex];
+      
+      if (header.key === 'descricao') {
+        column.width = 50; 
+      } else if (header.key === 'observacao' || header.key === 'motivo') {
+        column.width = 40;
+      } else {
+        column.width = maxLength < 10 ? 10 : maxLength + 2;
+      }
     });
 
     worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
       if (rowNumber === 1) return; 
       
       row.eachCell({ includeEmpty: false }, (cell, colNumber) => {
+        const headers = ExcelExporter.getHeadersForEntity(worksheet.name);
+        const header = headers[colNumber - 1];
+        
+        if (header.key === 'descricao' || header.key === 'observacao' || header.key === 'motivo') {
+          cell.alignment = { 
+            ...cell.alignment,
+            wrapText: true
+          };
+        }
+        
         if (typeof cell.value === 'number') {
-          cell.numFmt = '#,##0.00';
+          if (header.key !== 'quantidade') {
+            cell.numFmt = '#,##0.00';
+          }
         }
       });
     });

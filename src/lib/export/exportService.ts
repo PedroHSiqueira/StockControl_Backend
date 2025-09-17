@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { ExcelExporter } from './excelExporter';
+import { calcularSaldoProduto, calcularSaldosProdutos } from '../estoqueUtils';
 
 const prisma = new PrismaClient();
 
@@ -37,6 +38,18 @@ export class ExportService {
                             usuario: true
                         }
                     });
+                    
+                    const produtosComQuantidade = await Promise.all(
+                        data.map(async (produto) => {
+                            const quantidade = await calcularSaldoProduto(produto.id);
+                            return {
+                                ...produto,
+                                quantidade
+                            };
+                        })
+                    );
+                    
+                    data = produtosComQuantidade;
                     fileName = `produtos_${empresaId}_${new Date().toISOString().split('T')[0]}`;
                     break;
 
