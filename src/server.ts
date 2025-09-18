@@ -13,7 +13,7 @@ const app = fastify({
 
 // Configuração do CORS
 app.register(fastifyCors, {
-  origin: ["https://stockcontrol-six.vercel.app"],
+  origin: ["http://localhost:3000"],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "user-id", "client_key", "Accept"],
   credentials: true,
@@ -31,6 +31,7 @@ app.register(fastifyMultipart, {
 });
 
 
+// Rotas de Permissões
 
 app.register(Routes.permissoesRoutes);
 

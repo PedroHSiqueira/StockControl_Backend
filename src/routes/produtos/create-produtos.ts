@@ -141,11 +141,6 @@ app.post("/produtos/upload-foto", async (request: FastifyRequest, reply) => {
             console.error("ERRO CLOUDINARY:", error);
             reject(error);
           } else {
-            console.log("SUCESSO CLOUDINARY:", {
-              bytes: result?.bytes,
-              format: result?.format,
-              url: result?.secure_url
-            });
             resolve(result);
           }
         }
