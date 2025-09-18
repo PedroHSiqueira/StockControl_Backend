@@ -1,7 +1,6 @@
 import { prisma } from "../src/lib/prisma";
 
 async function migrarDadosExistentes() {
-  console.log("Iniciando migração de estoque...");
   
   const produtos = await prisma.produto.findMany();
   

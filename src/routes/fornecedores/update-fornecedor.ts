@@ -1,13 +1,96 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
 import { prisma } from "../../lib/prisma";
 import cloudinary from "../../config/cloudinaryConfig";
-import { pipeline } from "stream";
-import { promisify } from "util";
+
 import { usuarioTemPermissao } from "../../lib/permissaoUtils";
 
-const pump = promisify(pipeline);
 
 export async function updateFornecedor(app: FastifyInstance) {
+  app.put("/fornecedor/:id/upload-foto", async (request: FastifyRequest, reply) => {
+    try {
+      const userId = request.headers["user-id"] as string;
+      if (!userId) {
+        return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+      }
+
+      const temPermissao = await usuarioTemPermissao(userId, "fornecedores_editar");
+      if (!temPermissao) {
+        return reply.status(403).send({ mensagem: "Acesso negado. Permissão necessária: fornecedores_editar" });
+      }
+
+      const { id } = request.params as { id: string };
+      
+      const fornecedorExistente = await prisma.fornecedor.findUnique({
+        where: { id: String(id) },
+      });
+
+      if (!fornecedorExistente) {
+        return reply.status(404).send({ mensagem: "Fornecedor não encontrado" });
+      }
+
+      const data = await request.file();
+      if (!data) {
+        return reply.status(400).send({ mensagem: "Nenhum arquivo enviado" });
+      }
+
+      const chunks: Buffer[] = [];
+      let totalSize = 0;
+
+      for await (const chunk of data.file) {
+        chunks.push(chunk);
+        totalSize += chunk.length;
+      }
+
+      const fileBuffer = Buffer.concat(chunks);
+
+      if (fornecedorExistente.foto) {
+        const publicId = fornecedorExistente.foto.split("/").pop()?.split(".")[0];
+        if (publicId) {
+          await cloudinary.uploader.destroy(publicId).catch(console.error);
+        }
+      }
+
+      const result = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            resource_type: "auto",
+            chunk_size: 20 * 1024 * 1024,
+            timeout: 60000,
+          },
+          (error, result) => {
+            if (error) {
+              console.error("ERRO CLOUDINARY:", error);
+              reject(error);
+            } else {
+              console.log("SUCESSO CLOUDINARY:", {
+                bytes: result?.bytes,
+                format: result?.format,
+                url: result?.secure_url
+              });
+              resolve(result);
+            }
+          }
+        );
+
+        uploadStream.end(fileBuffer);
+      });
+
+      return reply.send({
+        success: true,
+        message: "Upload da foto realizado com sucesso",
+        fotoUrl: (result as any)?.secure_url,
+        fileSize: fileBuffer.length
+      });
+
+    } catch (error) {
+      console.error("Erro no upload da foto para update:", error);
+      return reply.status(500).send({
+        error: "Erro no upload da foto",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   app.put("/fornecedor/:id", async (request: FastifyRequest, reply) => {
     try {
       const userId = request.headers["user-id"] as string;
@@ -20,28 +103,22 @@ export async function updateFornecedor(app: FastifyInstance) {
       if (!temPermissao) {
         return reply.status(403).send({ mensagem: "Acesso negado. Permissão necessária: fornecedores_editar" });
       }
+
       const { id } = request.params as { id: string };
+      const body = request.body as any;
+      
+      const {
+        nome,
+        email,
+        cnpj,
+        telefone,
+        categoria,
+        empresaId,
+        usuarioId,
+        fotoUrl 
+      } = body;
 
-      const parts = request.parts();
-      const fields: Record<string, any> = {};
-      let fotoFile: any = null;
-
-      for await (const part of parts) {
-        if (part.type === "file" && part.fieldname === "foto") {
-          fotoFile = part;
-        } else if (part.type === "field") {
-          fields[part.fieldname] = part.value;
-        }
-      }
-
-      const nome = fields["nome"] || "";
-      const email = fields["email"] || "";
-      const cnpj = fields["cnpj"] || "";
-      const telefone = fields["telefone"] || "";
-      const categoria = fields["categoria"] || "";
-      const empresaId = fields["empresaId"] || "";
-
-      if (!nome.trim() || !email.trim() || !cnpj.trim() || !telefone.trim() || !empresaId.trim()) {
+      if (!nome?.trim() || !email?.trim() || !cnpj?.trim() || !telefone?.trim() || !empresaId?.trim()) {
         return reply.status(400).send({
           mensagem: "Por favor, preencher todos os campos obrigatórios",
           camposRecebidos: {
@@ -58,29 +135,8 @@ export async function updateFornecedor(app: FastifyInstance) {
         where: { id: String(id) },
       });
 
-      let fotoUrl = fornecedorExistente?.foto || null;
-
-      if (fotoFile) {
-        try {
-          const result = await new Promise((resolve, reject) => {
-            const uploadStream = cloudinary.uploader.upload_stream({ resource_type: "auto" }, (error, result) => {
-              if (error) {
-                console.error("Erro no upload:", error);
-                resolve(null);
-              } else {
-                resolve(result);
-              }
-            });
-            pump(fotoFile.file, uploadStream).catch((err) => {
-              console.error("Erro no pipeline:", err);
-              resolve(null);
-            });
-          });
-
-          fotoUrl = (result as any)?.secure_url || null;
-        } catch (uploadError) {
-          console.error("Erro no upload da imagem:", uploadError);
-        }
+      if (!fornecedorExistente) {
+        return reply.status(404).send({ mensagem: "Fornecedor não encontrado" });
       }
 
       const fornecedor = await prisma.fornecedor.update({
@@ -92,8 +148,8 @@ export async function updateFornecedor(app: FastifyInstance) {
           email: email.trim(),
           cnpj: cnpj.trim(),
           telefone: telefone.trim(),
-          categoria: categoria.trim(),
-          foto: fotoUrl,
+          categoria: categoria?.trim() || "",
+          foto: fotoUrl !== undefined ? fotoUrl : fornecedorExistente.foto,
           empresaId: empresaId.trim(),
         },
       });
@@ -102,6 +158,8 @@ export async function updateFornecedor(app: FastifyInstance) {
         data: {
           descricao: `Fornecedor Atualizado: ${fornecedor.nome}`,
           tipo: "ATUALIZACAO",
+          empresaId: fornecedor.empresaId,
+          usuarioId: usuarioId || userId,
         },
       });
 

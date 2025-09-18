@@ -5,7 +5,11 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-cloudinary.config({
-  max_file_size: 20 * 1024 * 1024, 
-});
+
+export const cloudinaryUploadOptions = {
+  resource_type: "auto" as const,
+  chunk_size: 6 * 1024 * 1024, 
+  timeout: 120000,
+  upload_preset: "seu_upload_preset", 
+};
 export default cloudinary;

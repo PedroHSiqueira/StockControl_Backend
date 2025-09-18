@@ -1,10 +1,15 @@
+
 import fastify from "fastify";
 import fastifyCors from "@fastify/cors";
 import fastifyMultipart from "@fastify/multipart";
 
 import * as Routes from "./routes";
 
-const app = fastify();
+const app = fastify({
+  connectionTimeout: 120000,
+  requestTimeout: 120000,
+  bodyLimit: 20 * 1024 * 1024,
+});
 
 // Configuração do CORS
 app.register(fastifyCors, {
@@ -17,10 +22,15 @@ app.register(fastifyCors, {
 app.register(fastifyMultipart, {
   limits: {
     fileSize: 20 * 1024 * 1024,
-    fields: 20,
+    fieldSize: 20 * 1024 * 1024,
+    fields: 50,
+    files: 10,
+    headerPairs: 2000,
   },
   attachFieldsToBody: false,
 });
+
+
 
 app.register(Routes.permissoesRoutes);
 

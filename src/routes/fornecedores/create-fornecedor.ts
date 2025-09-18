@@ -1,13 +1,80 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
 import { prisma } from "../../lib/prisma";
 import cloudinary from "../../config/cloudinaryConfig";
-import { pipeline } from "stream";
-import { promisify } from "util";
+
 import { usuarioTemPermissao } from "../../lib/permissaoUtils";
 
-const pump = promisify(pipeline);
-
 export async function createFornecedor(app: FastifyInstance) {
+  app.post("/fornecedor/upload-foto", async (request: FastifyRequest, reply) => {
+    try {
+
+      const userId = request.headers["user-id"] as string;
+      if (!userId) {
+        return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+      }
+
+      const temPermissao = await usuarioTemPermissao(userId, "fornecedores_criar");
+      if (!temPermissao) {
+        return reply.status(403).send({ mensagem: "Acesso negado. Permissão necessária: fornecedores_criar" });
+      }
+
+      const data = await request.file();
+      if (!data) {
+        return reply.status(400).send({ mensagem: "Nenhum arquivo enviado" });
+      }
+
+      const chunks: Buffer[] = [];
+      let totalSize = 0;
+
+      for await (const chunk of data.file) {
+        chunks.push(chunk);
+        totalSize += chunk.length;
+      }
+
+      const fileBuffer = Buffer.concat(chunks);
+
+
+      const result = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            resource_type: "auto",
+            chunk_size: 20 * 1024 * 1024,
+            timeout: 60000,
+          },
+          (error, result) => {
+            if (error) {
+              console.error("ERRO CLOUDINARY:", error);
+              reject(error);
+            } else {
+              console.log("SUCESSO CLOUDINARY:", {
+                bytes: result?.bytes,
+                format: result?.format,
+                url: result?.secure_url
+              });
+              resolve(result);
+            }
+          }
+        );
+
+        uploadStream.end(fileBuffer);
+      });
+
+      return reply.send({
+        success: true,
+        message: "Upload da foto realizado com sucesso",
+        fotoUrl: (result as any)?.secure_url,
+        fileSize: fileBuffer.length
+      });
+
+    } catch (error) {
+      console.error("Erro no upload separado:", error);
+      return reply.status(500).send({
+        error: "Erro no upload da foto",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   app.post("/fornecedor", async (request: FastifyRequest, reply) => {
     try {
       const userId = request.headers["user-id"] as string;
@@ -20,26 +87,19 @@ export async function createFornecedor(app: FastifyInstance) {
       if (!temPermissao) {
         return reply.status(403).send({ mensagem: "Acesso negado. Permissão necessária: fornecedores_criar" });
       }
-      const parts = request.parts();
-      const fields: Record<string, any> = {};
-      let fotoFile: any = null;
 
-      for await (const part of parts) {
-        if (part.type === "file" && part.fieldname === "foto") {
-          fotoFile = part;
-        } else if (part.type === "field") {
-          fields[part.fieldname] = part.value;
-        }
-      }
+      const body = request.body as any;
+      const {
+        nome,
+        email,
+        cnpj,
+        telefone,
+        categoria,
+        empresaId,
+        fotoUrl 
+      } = body;
 
-      const nome = fields["nome"] || "";
-      const email = fields["email"] || "";
-      const cnpj = fields["cnpj"] || "";
-      const telefone = fields["telefone"] || "";
-      const categoria = fields["categoria"] || "";
-      const empresaId = fields["empresaId"] || "";
-
-      if (!nome.trim() || !email.trim() || !cnpj.trim() || !telefone.trim() || !empresaId.trim()) {
+      if (!nome?.trim() || !email?.trim() || !cnpj?.trim() || !telefone?.trim() || !empresaId?.trim()) {
         return reply.status(400).send({
           mensagem: "Por favor, preencher todos os campos obrigatórios",
           camposRecebidos: {
@@ -52,49 +112,26 @@ export async function createFornecedor(app: FastifyInstance) {
         });
       }
 
-      let fotoUrl = null;
-
-      if (fotoFile) {
-        try {
-          const result = await new Promise((resolve, reject) => {
-            const uploadStream = cloudinary.uploader.upload_stream({ resource_type: "auto" }, (error, result) => {
-              if (error) {
-                console.error("Erro no upload:", error);
-                resolve(null);
-              } else {
-                resolve(result);
-              }
-            });
-            pump(fotoFile.file, uploadStream).catch((err) => {
-              console.error("Erro no pipeline:", err);
-              resolve(null);
-            });
-          });
-
-          fotoUrl = (result as any)?.secure_url || null;
-        } catch (uploadError) {
-          console.error("Erro no upload da imagem:", uploadError);
-        }
-      }
-
       const fornecedor = await prisma.fornecedor.create({
         data: {
           nome: nome.trim(),
           email: email.trim(),
           cnpj: cnpj.trim(),
           telefone: telefone.trim(),
-          categoria: categoria.trim(),
-          foto: fotoUrl,
+          categoria: categoria?.trim() || "",
+          foto: fotoUrl || null,
           empresaId: empresaId.trim(),
         },
       });
+
       await prisma.logs.create({
         data: {
           descricao: `Fornecedor criado: ${fornecedor.nome}`,
           tipo: "CRIACAO",
+          empresaId: fornecedor.empresaId,
+          usuarioId: userId,
         },
       });
-
       return reply.status(201).send(fornecedor);
     } catch (error) {
       console.error("Erro ao criar fornecedor:", error);

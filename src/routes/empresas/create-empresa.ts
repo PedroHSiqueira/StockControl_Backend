@@ -1,12 +1,75 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
 import { prisma } from "../../lib/prisma";
 import cloudinary from "../../config/cloudinaryConfig";
-import { pipeline } from "stream";
-import { promisify } from "util";
 import slugify from "slugify";
-const pump = promisify(pipeline);
 
 export async function createEmpresa(app: FastifyInstance) {
+  app.post("/empresa/upload-foto", async (request: FastifyRequest, reply) => {
+    try {
+
+      const userId = request.headers["user-id"] as string;
+      if (!userId) {
+        return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+      }
+
+      const data = await request.file();
+      if (!data) {
+        return reply.status(400).send({ mensagem: "Nenhum arquivo enviado" });
+      }
+
+      const chunks: Buffer[] = [];
+      let totalSize = 0;
+
+      for await (const chunk of data.file) {
+        chunks.push(chunk);
+        totalSize += chunk.length;
+      }
+
+      const fileBuffer = Buffer.concat(chunks);
+
+
+
+      const result = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            resource_type: "auto",
+            chunk_size: 20 * 1024 * 1024,
+            timeout: 60000,
+          },
+          (error, result) => {
+            if (error) {
+              console.error("ERRO CLOUDINARY:", error);
+              reject(error);
+            } else {
+              console.log("SUCESSO CLOUDINARY:", {
+                bytes: result?.bytes,
+                format: result?.format,
+                url: result?.secure_url
+              });
+              resolve(result);
+            }
+          }
+        );
+
+        uploadStream.end(fileBuffer);
+      });
+
+      return reply.send({
+        success: true,
+        message: "Upload da foto realizado com sucesso",
+        fotoUrl: (result as any)?.secure_url,
+        fileSize: fileBuffer.length
+      });
+
+    } catch (error) {
+      console.error("Erro no upload separado:", error);
+      return reply.status(500).send({
+        error: "Erro no upload da foto",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   app.post("/empresa", async (request: FastifyRequest, reply) => {
     try {
       const userId = request.headers["user-id"] as string | undefined;
@@ -15,29 +78,21 @@ export async function createEmpresa(app: FastifyInstance) {
         return reply.status(401).send({ mensagem: "Usuário não autenticado" });
       }
 
-      const parts = request.parts();
-      const fields: Record<string, any> = {};
-      let fotoFile: any = null;
+      const body = request.body as any;
+      const {
+        nome,
+        email,
+        telefone,
+        endereco,
+        pais,
+        estado,
+        cidade,
+        cep,
+        dominioSolicitado,
+        fotoUrl 
+      } = body;
 
-      for await (const part of parts) {
-        if (part.type === "file" && part.fieldname === "foto") {
-          fotoFile = part;
-        } else if (part.type === "field") {
-          fields[part.fieldname] = part.value;
-        }
-      }
-
-      const nome = fields["nome"] || "";
-      const email = fields["email"] || "";
-      const telefone = fields["telefone"] || "";
-      const endereco = fields["endereco"] || "";
-      const pais = fields["pais"] || "";
-      const estado = fields["estado"] || "";
-      const cidade = fields["cidade"] || "";
-      const cep = fields["cep"] || "";
-      const dominioSolicitado = fields["dominio"] || "";
-
-      if (!nome.trim() || !email.trim()) {
+      if (!nome?.trim() || !email?.trim()) {
         return reply.status(400).send({
           mensagem: "Nome e email são obrigatórios",
           camposRecebidos: {
@@ -57,31 +112,6 @@ export async function createEmpresa(app: FastifyInstance) {
           mensagem: "Este email já está em uso por outra empresa",
           error: "EMAIL_ALREADY_EXISTS"
         });
-      }
-
-      let fotoUrl = null;
-
-      if (fotoFile) {
-        try {
-          const result = await new Promise((resolve, reject) => {
-            const uploadStream = cloudinary.uploader.upload_stream({ resource_type: "auto" }, (error, result) => {
-              if (error) {
-                console.error("Erro no upload:", error);
-                resolve(null);
-              } else {
-                resolve(result);
-              }
-            });
-            pump(fotoFile.file, uploadStream).catch((err) => {
-              console.error("Erro no pipeline:", err);
-              resolve(null);
-            });
-          });
-
-          fotoUrl = (result as any)?.secure_url || null;
-        } catch (uploadError) {
-          console.error("Erro no upload da imagem:", uploadError);
-        }
       }
 
       let finalSlug = "";
@@ -113,13 +143,13 @@ export async function createEmpresa(app: FastifyInstance) {
           nome: nome.trim(),
           slug: finalSlug,
           email: email.trim().toLowerCase(),
-          foto: fotoUrl,
-          telefone: telefone.trim(),
-          endereco: endereco.trim(),
-          pais: pais.trim(),
-          estado: estado.trim(),
-          cidade: cidade.trim(),
-          cep: cep.trim(),
+          foto: fotoUrl || null,
+          telefone: telefone?.trim() || "",
+          endereco: endereco?.trim() || "",
+          pais: pais?.trim() || "",
+          estado: estado?.trim() || "",
+          cidade: cidade?.trim() || "",
+          cep: cep?.trim() || "",
           usuario: {
             connect: {
               id: userId,
@@ -158,7 +188,7 @@ export async function createEmpresa(app: FastifyInstance) {
 
       return reply.status(201).send({
         ...empresa,
-        mensagem: "Empresa criada com sucesso!",
+        mensagem: "Empresa criada con sucesso!",
         dominio: finalSlug,
         urlCatalogo: `${process.env.NEXT_PUBLIC_URL}/catalogo/${finalSlug}`
       });

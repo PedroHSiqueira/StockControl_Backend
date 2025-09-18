@@ -1,12 +1,99 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
 import { prisma } from "../../lib/prisma";
 import cloudinary from "../../config/cloudinaryConfig";
-import { pipeline } from "stream";
-import { promisify } from "util";
-
-const pump = promisify(pipeline);
 
 export async function updateEmpresa(app: FastifyInstance) {
+  app.put("/empresa/:id/upload-foto", async (request: FastifyRequest, reply) => {
+    try {
+
+      const { id } = request.params as { id: string };
+      const userId = request.headers["user-id"] as string;
+
+      if (!userId) {
+        return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+      }
+
+      const usuario = await prisma.usuario.findUnique({
+        where: { id: userId },
+        include: { empresa: true },
+      });
+
+      if (!usuario || !usuario.empresa) {
+        return reply.status(404).send({ mensagem: "Usuário ou empresa não encontrados" });
+      }
+
+      if (usuario.empresa.id !== id) {
+        return reply.status(403).send({ mensagem: "Você não tem permissão para editar esta empresa" });
+      }
+
+      if (usuario.tipo === "FUNCIONARIO") {
+        return reply.status(403).send({ mensagem: "Funcionários não podem editar dados da empresa" });
+      }
+
+      const data = await request.file();
+      if (!data) {
+        return reply.status(400).send({ mensagem: "Nenhum arquivo enviado" });
+      }
+
+      const chunks: Buffer[] = [];
+      let totalSize = 0;
+
+      for await (const chunk of data.file) {
+        chunks.push(chunk);
+        totalSize += chunk.length;
+      }
+
+      const fileBuffer = Buffer.concat(chunks);
+
+
+      if (usuario.empresa.foto) {
+        const publicId = usuario.empresa.foto.split("/").pop()?.split(".")[0];
+        if (publicId) {
+          await cloudinary.uploader.destroy(publicId).catch(console.error);
+        }
+      }
+
+      const result = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            resource_type: "auto",
+            chunk_size: 20 * 1024 * 1024,
+            timeout: 60000,
+          },
+          (error, result) => {
+            if (error) {
+              console.error("ERRO CLOUDINARY:", error);
+              reject(error);
+            } else {
+              console.log("SUCESSO CLOUDINARY:", {
+                bytes: result?.bytes,
+                format: result?.format,
+                url: result?.secure_url
+              });
+              resolve(result);
+            }
+          }
+        );
+
+        uploadStream.end(fileBuffer);
+      });
+
+      return reply.send({
+        success: true,
+        message: "Upload da foto realizado com sucesso",
+        fotoUrl: (result as any)?.secure_url,
+        fileSize: fileBuffer.length
+      });
+
+    } catch (error) {
+      console.error("Erro no upload da foto para update:", error);
+      return reply.status(500).send({
+        error: "Erro no upload da foto",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   app.put("/empresa/:id/:usuarioId", async (request: FastifyRequest, reply) => {
     try {
       const { id, usuarioId } = request.params as { id: string; usuarioId: string };
@@ -28,63 +115,38 @@ export async function updateEmpresa(app: FastifyInstance) {
         return reply.status(403).send({ mensagem: "Funcionários não podem editar dados da empresa" });
       }
 
-      const parts = request.parts();
-      const fields: Record<string, any> = {};
-      let fotoFile: any = null;
-
-      for await (const part of parts) {
-        if (part.type === "file" && part.fieldname === "foto") {
-          fotoFile = part;
-        } else if (part.type === "field") {
-          fields[part.fieldname] = part.value === "null" ? null : part.value;
-        }
-      }
+      const body = request.body as any;
+      const {
+        nome,
+        email,
+        telefone,
+        endereco,
+        pais,
+        estado,
+        cidade,
+        cep,
+        fotoUrl 
+      } = body;
 
       if (usuario.tipo === "ADMIN") {
-        if (fields["nome"] && fields["nome"] !== usuario.empresa.nome) {
+        if (nome && nome !== usuario.empresa.nome) {
           return reply.status(403).send({ mensagem: "ADMIN não pode alterar o nome da empresa" });
         }
-        if (fields["email"] && fields["email"] !== usuario.empresa.email) {
+        if (email && email !== usuario.empresa.email) {
           return reply.status(403).send({ mensagem: "ADMIN não pode alterar o email da empresa" });
         }
       }
 
-      let fotoUrl = usuario.empresa.foto;
-      if (fotoFile) {
-        try {
-          const result = await new Promise((resolve, reject) => {
-            const uploadStream = cloudinary.uploader.upload_stream({ resource_type: "auto" }, (error, result) => {
-              if (error) {
-                console.error("Erro no upload:", error);
-                resolve(null);
-              } else {
-                resolve(result);
-              }
-            });
-            pump(fotoFile.file, uploadStream).catch((err) => {
-              console.error("Erro no pipeline:", err);
-              resolve(null);
-            });
-          });
-
-          fotoUrl = (result as any)?.secure_url || null;
-        } catch (uploadError) {
-          console.error("Erro no upload da imagem:", uploadError);
-        }
-      } else if (fields["foto"] === null) {
-        fotoUrl = null;
-      }
-
       const updateData: Record<string, any> = {
-        ...(fields["nome"] !== undefined && { nome: fields["nome"]?.trim() }),
-        ...(fields["email"] !== undefined && { email: fields["email"]?.trim() }),
+        ...(nome !== undefined && { nome: nome?.trim() }),
+        ...(email !== undefined && { email: email?.trim() }),
         ...(fotoUrl !== undefined && { foto: fotoUrl }),
-        ...(fields["telefone"] !== undefined && { telefone: fields["telefone"]?.trim() }),
-        ...(fields["endereco"] !== undefined && { endereco: fields["endereco"]?.trim() }),
-        ...(fields["pais"] !== undefined && { pais: fields["pais"]?.trim() }),
-        ...(fields["estado"] !== undefined && { estado: fields["estado"]?.trim() }),
-        ...(fields["cidade"] !== undefined && { cidade: fields["cidade"]?.trim() }),
-        ...(fields["cep"] !== undefined && { cep: fields["cep"]?.trim() }),
+        ...(telefone !== undefined && { telefone: telefone?.trim() }),
+        ...(endereco !== undefined && { endereco: endereco?.trim() }),
+        ...(pais !== undefined && { pais: pais?.trim() }),
+        ...(estado !== undefined && { estado: estado?.trim() }),
+        ...(cidade !== undefined && { cidade: cidade?.trim() }),
+        ...(cep !== undefined && { cep: cep?.trim() }),
       };
 
       const empresaAtualizada = await prisma.empresa.update({
