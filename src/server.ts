@@ -106,6 +106,8 @@ app.register(Routes.toggleCatalogo);
 // Rota Logs
 app.register(Routes.getLogs);
 
+app.register(Routes.pedidosRoutes);
+
 // Rota de movimentações de estoque
 app.register(Routes.movimentacoesEstoqueRoutes);
 

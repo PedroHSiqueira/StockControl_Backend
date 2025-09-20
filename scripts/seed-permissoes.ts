@@ -159,7 +159,39 @@ const permissoes = [
     nome: "Visualizar Inventário",
     descricao: "Permite Visualizar inventário do estoque",
     categoria: "ESTOQUE"
-  }
+  },
+  // Pedidos de Estoque
+
+  {
+    nome: "Criar Pedidos",
+    descricao: "Permite criar novos pedidos de compra",
+    chave: "pedidos_criar",
+    categoria: "PEDIDOS"
+  },
+  {
+    nome: "Editar Pedidos",
+    descricao: "Permite editar pedidos existentes",
+    chave: "pedidos_editar",
+    categoria: "PEDIDOS"
+  },
+  {
+    nome: "Visualizar Pedidos",
+    descricao: "Permite visualizar a lista de pedidos",
+    chave: "pedidos_visualizar",
+    categoria: "PEDIDOS"
+  },
+  {
+    nome: "Excluir Pedidos",
+    descricao: "Permite excluir pedidos do sistema",
+    chave: "pedidos_excluir",
+    categoria: "PEDIDOS"
+  },
+  {
+    nome: "Gerenciar Status de Pedidos",
+    descricao: "Permite alterar o status dos pedidos",
+    chave: "pedidos_gerenciar_status",
+    categoria: "PEDIDOS"
+  },
 ];
 
 async function main() {
@@ -204,7 +236,8 @@ async function main() {
         'produtos_criar', 'produtos_editar', 'produtos_visualizar',
         'clientes_criar', 'clientes_editar', 'clientes_visualizar',
         'fornecedores_criar', 'fornecedores_editar', 'fornecedores_visualizar',
-        'vendas_realizar', 'vendas_visualizar', 'estoque_gerenciar', 'inventario_visualizar'
+        'vendas_realizar', 'vendas_visualizar', 'estoque_gerenciar', 'inventario_visualizar',
+        'pedidos_criar', 'pedidos_editar', 'pedidos_visualizar', 'pedidos_gerenciar_status'
       ];
 
       for (const permissao of todasPermissoes) {
@@ -232,7 +265,8 @@ async function main() {
         'vendas_realizar',
         'inventario_visualizar',
         'usuarios_visualizar',
-        'fornecedores_visualizar'
+        'fornecedores_visualizar',
+        'pedidos_visualizar'
       ];
 
       for (const permissao of todasPermissoes) {

@@ -57,3 +57,5 @@ export { permissoesRoutes } from "./permissoes/permissoes";
 
 export { movimentacoesEstoqueRoutes } from "./movimentacoes/movimentacoes-estoque";
 
+export { pedidosRoutes } from "./pedidos/pedidos";
+

@@ -13,6 +13,48 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Pedido {
+  id            String      @id @default(uuid()) @db.VarChar(36)
+  numero        String      @unique @db.VarChar(20)
+  fornecedor    Fornecedor  @relation(fields: [fornecedorId], references: [id])
+  fornecedorId  String      @db.VarChar(36)
+  empresa       Empresa     @relation(fields: [empresaId], references: [id])
+  empresaId     String      @db.VarChar(36)
+  usuario       Usuario     @relation(fields: [usuarioId], references: [id])
+  usuarioId     String      @db.VarChar(36)
+  observacoes   String?     @db.VarChar(500)
+  status        StatusPedido
+  total         Float
+  itens         ItemPedido[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@map("pedidos")
+}
+
+model ItemPedido {
+  id                  String   @id @default(uuid()) @db.VarChar(36)
+  pedido              Pedido   @relation(fields: [pedidoId], references: [id])
+  pedidoId           String   @db.VarChar(36)
+  produto            Produto  @relation(fields: [produtoId], references: [id])
+  produtoId          Int
+  quantidadeSolicitada Int
+  quantidadeAtendida  Int      @default(0)
+  precoUnitario      Float
+  observacao         String?   @db.VarChar(255)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("itens_pedido")
+}
+
+enum StatusPedido {
+  PENDENTE
+  PROCESSANDO
+  CONCLUIDO
+  CANCELADO
+}
+
 model Permissao {
   id               String             @id @default(uuid()) @db.VarChar(36)
   nome             String             @db.VarChar(60)
@@ -63,6 +105,7 @@ model Usuario {
   Inventario          Inventario[]
 
   @@map("usuarios")
+  Pedido Pedido[]
 }
 
 model Fornecedor {
@@ -80,6 +123,7 @@ model Fornecedor {
   Produto   Produto[]
 
   @@map("fornecedores")
+  Pedido Pedido[]
 }
 
 model Empresa {
@@ -110,6 +154,7 @@ model Empresa {
   Inventario          Inventario[]
 
   @@map("empresas")
+  Pedido Pedido[]
 }
 
 model cliente {
@@ -165,6 +210,7 @@ model Produto {
   ItemInventario ItemInventario[]
 
   @@map("produtos")
+  ItemPedido ItemPedido[]
 }
 
 model Venda {
@@ -343,6 +389,7 @@ enum TipoLog {
   ATUALIZACAO
   EXCLUSAO
   BAIXA
+  EMAIL_ENVIADO
 }
 
 enum Medidas {

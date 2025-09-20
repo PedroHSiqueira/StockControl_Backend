@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "TipoLog" ADD VALUE 'EMAIL_ENVIADO';
