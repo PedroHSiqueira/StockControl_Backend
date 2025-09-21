@@ -25,41 +25,47 @@ export async function getVendas(app: FastifyInstance) {
   });
 
   app.get("/venda/top-produtos/:idEmpresa", async (request, reply) => {
-  const { idEmpresa } = request.params as { idEmpresa: string };
+    const { idEmpresa } = request.params as { idEmpresa: string };
 
-  const topProdutos = await prisma.venda.groupBy({
-    by: ['produtoId'],
-    where: {
-      empresaId: idEmpresa,
-    },
-    _count: {
-      id: true,
-    },
-    orderBy: {
-      _count: {
-        id: 'desc',
-      },
-    },
-    take: 5,
-  });
-
-  const produtosComNomes = await Promise.all(
-    topProdutos.map(async (item) => {
-      const produto = await prisma.produto.findUnique({
-        where: { id: item.produtoId },
-        select: { nome: true }
+    try {
+      const topProdutos = await prisma.venda.groupBy({
+        by: ['produtoId'],
+        where: {
+          empresaId: idEmpresa,
+        },
+        _sum: {
+          quantidade: true, 
+        },
+        orderBy: {
+          _sum: {
+            quantidade: 'desc', 
+          },
+        },
+        take: 5,
       });
 
-      return {
-        id: item.produtoId,
-        nome: produto?.nome || `Produto ${String(item.produtoId).substring(0, 8)}`,
-        vendas: item._count.id,
-      };
-    })
-  );
+      const produtosComNomes = await Promise.all(
+        topProdutos.map(async (item) => {
+          const produto = await prisma.produto.findUnique({
+            where: { id: item.produtoId },
+            select: { nome: true }
+          });
 
-  return reply.status(200).send(produtosComNomes);
-});
+          return {
+            id: item.produtoId.toString(),
+            nome: produto?.nome || `Produto ${String(item.produtoId).substring(0, 8)}`,
+            vendas: item._sum.quantidade || 0, 
+          };
+        })
+      );
+
+      return reply.status(200).send(produtosComNomes);
+    } catch (error) {
+      console.error("Erro ao buscar top produtos:", error);
+      return reply.status(500).send({ mensagem: "Erro interno ao buscar top produtos" });
+    }
+  });
+
   app.get("/venda/contagem/:idEmpresa", async (request, reply) => {
     const { idEmpresa } = request.params as { idEmpresa: string };
 
@@ -69,6 +75,7 @@ export async function getVendas(app: FastifyInstance) {
       },
       _sum: {
         valorVenda: true,
+        quantidade: true, 
       },
       _count: {
         id: true,
@@ -77,7 +84,8 @@ export async function getVendas(app: FastifyInstance) {
 
     return reply.status(200).send({
       total: total._sum.valorVenda,
-      quantidadeVendas: total._count.id,
+      totalQuantidade: total._sum.quantidade, 
+      quantidadeVendas: total._count.id, 
     });
   });
 }
