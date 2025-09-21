@@ -26,6 +26,26 @@ export async function pedidosRoutes(app: FastifyInstance) {
                 userId
             );
 
+            const fornecedor = await prisma.fornecedor.findUnique({
+                where: { id: resultado.pedido.fornecedorId },
+                select: { nome: true }
+            });
+
+            await prisma.logs.create({
+                data: {
+                    descricao: JSON.stringify({
+                        entityType: "pedidos",
+                        action: "pedido_criado",
+                        pedidoNumero: resultado.pedido.numero,
+                        fornecedorNome: fornecedor?.nome || 'Fornecedor',
+                        quantidadeItens: itens.length
+                    }),
+                    tipo: "CRIACAO",
+                    empresaId,
+                    usuarioId: userId,
+                }
+            });
+
             return reply.status(201).send({
                 mensagem: "Pedido criado com sucesso",
                 pedido: resultado.pedido,
@@ -122,13 +142,12 @@ export async function pedidosRoutes(app: FastifyInstance) {
             const temPermissao = await usuarioTemPermissao(userId, "pedidos_editar");
             if (!temPermissao) return reply.status(403).send({ mensagem: "Acesso negado" });
 
-
             const { id } = request.params as { id: string };
             const { status } = request.body as any;
 
             const pedidoExistente = await prisma.pedido.findUnique({
                 where: { id },
-                include: { empresa: true }
+                include: { empresa: true, fornecedor: true }
             });
 
             if (!pedidoExistente) {
@@ -141,6 +160,22 @@ export async function pedidosRoutes(app: FastifyInstance) {
                 userId,
                 pedidoExistente.empresaId
             );
+
+            await prisma.logs.create({
+                data: {
+                    descricao: JSON.stringify({
+                        entityType: "pedidos",
+                        action: "status_atualizado",
+                        pedidoNumero: pedidoExistente.numero,
+                        statusAnterior: pedidoExistente.status,
+                        statusNovo: status,
+                        fornecedorNome: pedidoExistente.fornecedor?.nome || 'Fornecedor'
+                    }),
+                    tipo: "ATUALIZACAO",
+                    empresaId: pedidoExistente.empresaId,
+                    usuarioId: userId,
+                }
+            });
 
             return reply.send({
                 mensagem: "Status do pedido atualizado com sucesso",
@@ -160,13 +195,12 @@ export async function pedidosRoutes(app: FastifyInstance) {
             const temPermissao = await usuarioTemPermissao(userId, "pedidos_editar");
             if (!temPermissao) return reply.status(403).send({ mensagem: "Acesso negado" });
 
-
             const { id } = request.params as { id: string };
             const { itens } = request.body as any;
 
             const pedido = await prisma.pedido.findUnique({
                 where: { id },
-                include: { empresa: true }
+                include: { empresa: true, fornecedor: true }
             });
 
             if (!pedido) {
@@ -184,10 +218,16 @@ export async function pedidosRoutes(app: FastifyInstance) {
 
             await prisma.logs.create({
                 data: {
+                    descricao: JSON.stringify({
+                        entityType: "pedidos",
+                        action: "itens_atualizados",
+                        pedidoNumero: pedido.numero,
+                        fornecedorNome: pedido.fornecedor?.nome || 'Fornecedor',
+                        quantidadeItensAtualizados: itens.length
+                    }),
+                    tipo: "ATUALIZACAO",
                     empresaId: pedido.empresaId,
                     usuarioId: userId,
-                    descricao: `Quantidades atualizadas no pedido ${pedido.numero}`,
-                    tipo: 'ATUALIZACAO'
                 }
             });
 
@@ -211,7 +251,7 @@ export async function pedidosRoutes(app: FastifyInstance) {
 
             const pedidoExistente = await prisma.pedido.findUnique({
                 where: { id },
-                include: { empresa: true }
+                include: { empresa: true, fornecedor: true }
             });
 
             if (!pedidoExistente) {
@@ -224,6 +264,21 @@ export async function pedidosRoutes(app: FastifyInstance) {
                 userId,
                 pedidoExistente.empresaId
             );
+
+            await prisma.logs.create({
+                data: {
+                    descricao: JSON.stringify({
+                        entityType: "pedidos",
+                        action: "pedido_concluido_estoque",
+                        pedidoNumero: pedidoExistente.numero,
+                        fornecedorNome: pedidoExistente.fornecedor?.nome || 'Fornecedor',
+                        statusFinal: pedidoAtualizado.status
+                    }),
+                    tipo: "ATUALIZACAO",
+                    empresaId: pedidoExistente.empresaId,
+                    usuarioId: userId,
+                }
+            });
 
             return reply.send({
                 mensagem: "Pedido concluído e estoque atualizado com sucesso",
@@ -251,10 +306,16 @@ export async function pedidosRoutes(app: FastifyInstance) {
 
             await prisma.logs.create({
                 data: {
+                    descricao: JSON.stringify({
+                        entityType: "pedidos",
+                        action: "email_enviado_fornecedor",
+                        pedidoNumero: pedido.numero,
+                        fornecedorNome: pedido.fornecedor.nome,
+                        fornecedorEmail: pedido.fornecedor.email
+                    }),
+                    tipo: "EMAIL_ENVIADO",
                     empresaId: pedido.empresaId,
                     usuarioId: userId,
-                    descricao: `Email enviado para fornecedor ${pedido.fornecedor.nome} sobre pedido ${pedido.numero}`,
-                    tipo: 'EMAIL_ENVIADO'
                 }
             });
 
