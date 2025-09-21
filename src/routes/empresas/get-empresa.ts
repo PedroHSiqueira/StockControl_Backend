@@ -35,6 +35,33 @@ export async function getEmpresa(app: FastifyInstance) {
     reply.send(usuario.empresa);
   });
 
+
+  app.get("/empresa/verificar-email-edicao/:email/:empresaId", async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const { email, empresaId } = request.params as { email: string; empresaId: string };
+    
+    const empresaExistente = await prisma.empresa.findFirst({
+      where: {
+        email: email.toLowerCase().trim(),
+        id: {
+          not: empresaId
+        }
+      },
+      select: { id: true, nome: true }
+    });
+
+    return reply.send({
+      existe: !!empresaExistente,
+      mensagem: empresaExistente
+        ? "Este email já está em uso por outra empresa"
+        : "Email disponível"
+    });
+  } catch (error) {
+    console.error("Erro ao verificar email para edição:", error);
+    return reply.status(500).send({ mensagem: "Erro interno no servidor" });
+  }
+});
+
   app.get("/empresa/verificar-email/:email", async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { email } = request.params as { email: string };
