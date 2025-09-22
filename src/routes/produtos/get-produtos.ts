@@ -1,4 +1,4 @@
-import { FastifyInstance } from "fastify";
+import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { prisma } from "../../lib/prisma";
 import { calcularSaldoProduto } from "../../lib/estoqueUtils";
 
@@ -31,6 +31,41 @@ export async function getProduto(app: FastifyInstance) {
       reply.status(500).send({ mensagem: "Erro interno" });
     }
   });
+
+  app.get("/produtos/empresa/:empresaId", async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const { empresaId } = request.params as { empresaId: string };
+
+    const produtos = await prisma.produto.findMany({
+      where: {
+        empresaId: empresaId
+      },
+      include: {
+        categoria: true,
+        fornecedor: true,
+        Movimentacoes: true,
+      },
+      orderBy: {
+        nome: 'asc'
+      }
+    });
+
+    const produtosComSaldo = await Promise.all(
+      produtos.map(async (produto) => {
+        const saldo = await calcularSaldoProduto(produto.id);
+        return {
+          ...produto,
+          quantidade: saldo
+        };
+      })
+    );
+
+    reply.send(produtosComSaldo);
+  } catch (error) {
+    console.error("Erro ao buscar produtos da empresa:", error);
+    reply.status(500).send({ mensagem: "Erro interno ao buscar produtos" });
+  }
+});
 
  app.get("/produtos/contagem/:empresaId", async (request, reply) => {
     const { empresaId } = request.params as { empresaId: string };
