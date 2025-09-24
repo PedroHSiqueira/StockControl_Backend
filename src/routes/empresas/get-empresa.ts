@@ -35,40 +35,58 @@ export async function getEmpresa(app: FastifyInstance) {
     reply.send(usuario.empresa);
   });
 
+
   app.get("/empresa/verificar-email/:email", async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { email } = request.params as { email: string };
 
       const url = request.url;
       const hasEmpresaId = url.includes('?empresaId=');
-      
+
       let empresaId = '';
       if (hasEmpresaId) {
         const urlParams = new URLSearchParams(url.split('?')[1]);
         empresaId = urlParams.get('empresaId') || '';
       }
 
-      const whereClause = empresaId 
+      const whereClauseEmpresa = empresaId
         ? {
-            email: email.toLowerCase().trim(),
-            id: {
-              not: empresaId
-            }
+          email: email.toLowerCase().trim(),
+          id: {
+            not: empresaId
           }
+        }
         : {
-            email: email.toLowerCase().trim()
-          };
+          email: email.toLowerCase().trim()
+        };
 
       const empresaExistente = await prisma.empresa.findFirst({
-        where: whereClause,
+        where: whereClauseEmpresa,
         select: { id: true, nome: true }
       });
 
+      const usuarioExistente = await prisma.usuario.findFirst({
+        where: {
+          email: email.toLowerCase().trim()
+        },
+        select: { id: true, nome: true }
+      });
+
+      const emailExiste = !!empresaExistente || !!usuarioExistente;
+
+      let mensagem = "Email disponível";
+
+      if (empresaExistente) {
+        mensagem = "Este email já está em uso por outra empresa";
+      } else if (usuarioExistente) {
+        mensagem = "Este email já está em uso por um usuário";
+      }
+
       return reply.send({
-        existe: !!empresaExistente,
-        mensagem: empresaExistente
-          ? "Este email já está em uso por outra empresa"
-          : "Email disponível"
+        existe: emailExiste,
+        empresaExistente: empresaExistente,
+        usuarioExistente: usuarioExistente,
+        mensagem: mensagem
       });
     } catch (error) {
       console.error("Erro ao verificar email:", error);
@@ -133,7 +151,7 @@ export async function getEmpresa(app: FastifyInstance) {
       return reply.status(500).send({ mensagem: "Erro interno" });
     }
   });
-  
+
   app.get("/empresa/empresa/:idEmpresa", async (request: FastifyRequest, reply: FastifyReply) => {
     const { idEmpresa } = request.params as { idEmpresa: string };
 
