@@ -74,7 +74,6 @@ app.register(Routes.catalogoEmpresa);
 app.register(Routes.toggleCatalogo);
 app.register(Routes.getLogs);
 app.register(Routes.emailRoutes);
-
 app.register(Routes.pedidosRoutes);
 app.register(Routes.movimentacoesEstoqueRoutes);
 
