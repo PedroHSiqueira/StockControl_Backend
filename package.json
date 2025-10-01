@@ -2,7 +2,7 @@
   "name": "back-end",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/server.ts",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "vercel-build": "npx prisma generate && npx prisma migrate deploy"
@@ -12,6 +12,7 @@
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^22.13.11",
+    "@types/nodemailer": "^7.0.2",
     "@types/pdfkit": "^0.17.2",
     "prisma": "^6.5.0",
     "tsx": "^4.19.3",
@@ -29,6 +30,8 @@
     "fastify": "^5.2.1",
     "fastify-multer": "^2.0.3",
     "fuse.js": "^7.1.0",
+    "googleapis": "^160.0.0",
+    "nodemailer": "^7.0.6",
     "pdfkit": "^0.17.1",
     "slugify": "^1.6.6",
     "zod": "^3.24.2"

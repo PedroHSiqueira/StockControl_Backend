@@ -1,4 +1,3 @@
-
 import fastify from "fastify";
 import fastifyCors from "@fastify/cors";
 import fastifyMultipart from "@fastify/multipart";
@@ -30,85 +29,53 @@ app.register(fastifyMultipart, {
   attachFieldsToBody: false,
 });
 
-
-// Rotas de Permissões
-
 app.register(Routes.permissoesRoutes);
-
-// Rotas de Usuarios
 app.register(Routes.createUser);
 app.register(Routes.getUsers);
 app.register(Routes.deleteUser);
 app.register(Routes.updateUser);
-
-// Rota de Exportação
 app.register(Routes.exportRoutes);
-
-// Rotas de Fornecedores
 app.register(Routes.createFornecedor);
 app.register(Routes.getFornecedor);
 app.register(Routes.deleteFornecedor);
 app.register(Routes.updateFornecedor);
-
-// Rotas de Produtos
 app.register(Routes.createProduto);
 app.register(Routes.getProduto);
 app.register(Routes.deleteProduto);
 app.register(Routes.updateProduto);
-
-// Rotas de categorias
 app.register(Routes.createCategorias);
 app.register(Routes.getCategorias);
 app.register(Routes.deleteCategorias);
 app.register(Routes.updateCategorias);
-
-// Rotas de Empresa
 app.register(Routes.createEmpresa);
 app.register(Routes.getEmpresa);
 app.register(Routes.deleteEmpresa);
 app.register(Routes.updateEmpresa);
-
-// Rotas de Notificações
 app.register(Routes.createNotificacao);
 app.register(Routes.getNotificacao);
 app.register(Routes.updateNotificacao);
 app.register(Routes.deleteNotificacao);
 app.register(Routes.notificacoesLidas);
-
-//Rotas de convites
 app.register(Routes.createConvite);
 app.register(Routes.getConvite);
 app.register(Routes.deleteConvite);
 app.register(Routes.updateConvite);
-
-// Rotas de Clientes
 app.register(Routes.createCliente);
 app.register(Routes.getCliente);
 app.register(Routes.deleteCliente);
 app.register(Routes.updateCliente);
-
-//Rotas de chaves
 app.register(Routes.createKey);
 app.register(Routes.getKey);
 app.register(Routes.updateKey);
-
-//Rotas de Vendas
 app.register(Routes.createVenda);
 app.register(Routes.getVendas);
-
-//Rotas Login
 app.register(Routes.loginUser);
-
-//Rotas de Catalogo
 app.register(Routes.catalogoEmpresa);
 app.register(Routes.toggleCatalogo);
-
-// Rota Logs
 app.register(Routes.getLogs);
+app.register(Routes.emailRoutes);
 
 app.register(Routes.pedidosRoutes);
-
-// Rota de movimentações de estoque
 app.register(Routes.movimentacoesEstoqueRoutes);
 
 app.get("/", async (request, reply) => {
@@ -116,5 +83,5 @@ app.get("/", async (request, reply) => {
 });
 
 app.listen({ port: 3001 }).then(() => {
-  console.log("Servidor rodando na porta 3001");
+  console.log("🚀 Servidor rodando na porta 3001");
 });

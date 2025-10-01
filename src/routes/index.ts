@@ -43,7 +43,7 @@ export { createVenda } from "./vendas/create-venda";
 export { getVendas } from "./vendas/get-produtos";
 
 export { getLogs } from "./logs/get-logs";
-
+export { emailRoutes } from "./email/email";
 export { createKey } from "./chaves/create-chave";
 export { getKey } from "./chaves/get-chave";
 export { updateKey } from "./chaves/update-chave";
