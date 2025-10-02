@@ -52,7 +52,7 @@ export { createCliente } from "./clientes/create-cliente";
 export { getCliente } from "./clientes/get-cliente";
 export { updateCliente } from "./clientes/update-cliente";
 export { deleteCliente } from "./clientes/delete-cliente";
-
+export { verificarEstoque } from "./estoque/verificar-estoque";
 export { permissoesRoutes } from "./permissoes/permissoes";
 
 export { movimentacoesEstoqueRoutes } from "./movimentacoes/movimentacoes-estoque";

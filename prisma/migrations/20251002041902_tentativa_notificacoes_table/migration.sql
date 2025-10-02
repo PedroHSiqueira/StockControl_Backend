@@ -1,14 +1,60 @@
 -- CreateEnum
+CREATE TYPE "StatusPedido" AS ENUM ('PENDENTE', 'PROCESSANDO', 'CONCLUIDO', 'CANCELADO');
+
+-- CreateEnum
+CREATE TYPE "TipoNotificacaoEstoque" AS ENUM ('ALERTA', 'CRITICO', 'ZERADO');
+
+-- CreateEnum
+CREATE TYPE "TipoMovimentacao" AS ENUM ('ENTRADA', 'SAIDA');
+
+-- CreateEnum
+CREATE TYPE "StatusInventario" AS ENUM ('EM_ANDAMENTO', 'CONCLUIDO', 'CANCELADO');
+
+-- CreateEnum
+CREATE TYPE "MotivoMovimentacao" AS ENUM ('VENDA', 'COMPRA', 'AJUSTE', 'DEVOLUCAO', 'PERDA', 'INVENTARIO');
+
+-- CreateEnum
 CREATE TYPE "TipoUsuario" AS ENUM ('ADMIN', 'FUNCIONARIO', 'PROPRIETARIO');
 
 -- CreateEnum
 CREATE TYPE "StatusConvite" AS ENUM ('PENDENTE', 'ACEITO', 'RECUSADO');
 
 -- CreateEnum
-CREATE TYPE "TipoLog" AS ENUM ('CRIACAO', 'ATUALIZACAO', 'EXCLUSAO', 'BAIXA');
+CREATE TYPE "TipoLog" AS ENUM ('CRIACAO', 'ATUALIZACAO', 'EXCLUSAO', 'BAIXA', 'EMAIL_ENVIADO');
 
 -- CreateEnum
 CREATE TYPE "Medidas" AS ENUM ('UNIDADE', 'LITRO', 'KILO');
+
+-- CreateTable
+CREATE TABLE "pedidos" (
+    "id" VARCHAR(36) NOT NULL,
+    "numero" VARCHAR(20) NOT NULL,
+    "fornecedorId" VARCHAR(36) NOT NULL,
+    "empresaId" VARCHAR(36) NOT NULL,
+    "usuarioId" VARCHAR(36) NOT NULL,
+    "observacoes" VARCHAR(500),
+    "status" "StatusPedido" NOT NULL,
+    "total" DOUBLE PRECISION NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "pedidos_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "itens_pedido" (
+    "id" VARCHAR(36) NOT NULL,
+    "pedidoId" VARCHAR(36) NOT NULL,
+    "produtoId" INTEGER NOT NULL,
+    "quantidadeSolicitada" INTEGER NOT NULL,
+    "quantidadeAtendida" INTEGER NOT NULL DEFAULT 0,
+    "precoUnitario" DOUBLE PRECISION NOT NULL,
+    "observacao" VARCHAR(255),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "itens_pedido_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
 CREATE TABLE "permissoes" (
@@ -108,6 +154,8 @@ CREATE TABLE "clientes" (
 CREATE TABLE "chaves_ativacao" (
     "chave" VARCHAR(36) NOT NULL,
     "empresaId" VARCHAR(36),
+    "utilizada" BOOLEAN NOT NULL DEFAULT false,
+    "dataUso" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -120,7 +168,6 @@ CREATE TABLE "produtos" (
     "nome" VARCHAR(60) NOT NULL,
     "descricao" VARCHAR(255) NOT NULL,
     "preco" DOUBLE PRECISION NOT NULL,
-    "quantidade" INTEGER NOT NULL,
     "quantidadeMin" INTEGER NOT NULL DEFAULT 0,
     "foto" VARCHAR(255),
     "noCatalogo" BOOLEAN NOT NULL DEFAULT false,
@@ -210,6 +257,82 @@ CREATE TABLE "logs" (
     CONSTRAINT "logs_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "movimentacoes_estoque" (
+    "id" VARCHAR(36) NOT NULL,
+    "produtoId" INTEGER NOT NULL,
+    "tipo" "TipoMovimentacao" NOT NULL,
+    "quantidade" INTEGER NOT NULL,
+    "motivo" VARCHAR(255),
+    "observacao" VARCHAR(500),
+    "usuarioId" VARCHAR(36) NOT NULL,
+    "empresaId" VARCHAR(36) NOT NULL,
+    "vendaId" INTEGER,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "movimentacoes_estoque_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "inventarios" (
+    "id" VARCHAR(36) NOT NULL,
+    "data" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "descricao" VARCHAR(255),
+    "status" "StatusInventario" NOT NULL,
+    "empresaId" VARCHAR(36) NOT NULL,
+    "usuarioId" VARCHAR(36) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "inventarios_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "itens_inventario" (
+    "id" VARCHAR(36) NOT NULL,
+    "inventarioId" VARCHAR(36) NOT NULL,
+    "produtoId" INTEGER NOT NULL,
+    "quantidadeSistema" INTEGER NOT NULL,
+    "quantidadeFisica" INTEGER NOT NULL,
+    "diferenca" INTEGER NOT NULL,
+    "observacao" VARCHAR(500),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "itens_inventario_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "notificacoes_estoque" (
+    "id" VARCHAR(36) NOT NULL,
+    "produtoId" INTEGER NOT NULL,
+    "empresaId" VARCHAR(36) NOT NULL,
+    "quantidade" INTEGER NOT NULL,
+    "tipo" "TipoNotificacaoEstoque" NOT NULL,
+    "enviadaEm" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "notificacoes_estoque_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "notificacoes_usuario" (
+    "id" VARCHAR(36) NOT NULL,
+    "notificacaoId" VARCHAR(36) NOT NULL,
+    "usuarioId" VARCHAR(36) NOT NULL,
+    "lida" BOOLEAN NOT NULL DEFAULT false,
+    "somTocado" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "notificacoes_usuario_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "pedidos_numero_key" ON "pedidos"("numero");
+
 -- CreateIndex
 CREATE UNIQUE INDEX "permissoes_chave_key" ON "permissoes"("chave");
 
@@ -239,6 +362,27 @@ CREATE UNIQUE INDEX "chaves_ativacao_empresaId_key" ON "chaves_ativacao"("empres
 
 -- CreateIndex
 CREATE UNIQUE INDEX "notificacoes_conviteId_key" ON "notificacoes"("conviteId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "notificacoes_estoque_produtoId_enviadaEm_key" ON "notificacoes_estoque"("produtoId", "enviadaEm");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "notificacoes_usuario_notificacaoId_usuarioId_key" ON "notificacoes_usuario"("notificacaoId", "usuarioId");
+
+-- AddForeignKey
+ALTER TABLE "pedidos" ADD CONSTRAINT "pedidos_fornecedorId_fkey" FOREIGN KEY ("fornecedorId") REFERENCES "fornecedores"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "pedidos" ADD CONSTRAINT "pedidos_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "empresas"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "pedidos" ADD CONSTRAINT "pedidos_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "usuarios"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "itens_pedido" ADD CONSTRAINT "itens_pedido_pedidoId_fkey" FOREIGN KEY ("pedidoId") REFERENCES "pedidos"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "itens_pedido" ADD CONSTRAINT "itens_pedido_produtoId_fkey" FOREIGN KEY ("produtoId") REFERENCES "produtos"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "usuario_permissoes" ADD CONSTRAINT "usuario_permissoes_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "usuarios"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -305,3 +449,39 @@ ALTER TABLE "logs" ADD CONSTRAINT "logs_empresaId_fkey" FOREIGN KEY ("empresaId"
 
 -- AddForeignKey
 ALTER TABLE "logs" ADD CONSTRAINT "logs_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "usuarios"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "movimentacoes_estoque" ADD CONSTRAINT "movimentacoes_estoque_produtoId_fkey" FOREIGN KEY ("produtoId") REFERENCES "produtos"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "movimentacoes_estoque" ADD CONSTRAINT "movimentacoes_estoque_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "usuarios"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "movimentacoes_estoque" ADD CONSTRAINT "movimentacoes_estoque_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "empresas"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "movimentacoes_estoque" ADD CONSTRAINT "movimentacoes_estoque_vendaId_fkey" FOREIGN KEY ("vendaId") REFERENCES "vendas"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "inventarios" ADD CONSTRAINT "inventarios_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "empresas"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "inventarios" ADD CONSTRAINT "inventarios_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "usuarios"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "itens_inventario" ADD CONSTRAINT "itens_inventario_inventarioId_fkey" FOREIGN KEY ("inventarioId") REFERENCES "inventarios"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "itens_inventario" ADD CONSTRAINT "itens_inventario_produtoId_fkey" FOREIGN KEY ("produtoId") REFERENCES "produtos"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "notificacoes_estoque" ADD CONSTRAINT "notificacoes_estoque_produtoId_fkey" FOREIGN KEY ("produtoId") REFERENCES "produtos"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "notificacoes_estoque" ADD CONSTRAINT "notificacoes_estoque_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "empresas"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "notificacoes_usuario" ADD CONSTRAINT "notificacoes_usuario_notificacaoId_fkey" FOREIGN KEY ("notificacaoId") REFERENCES "notificacoes"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "notificacoes_usuario" ADD CONSTRAINT "notificacoes_usuario_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "usuarios"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

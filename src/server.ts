@@ -1,8 +1,12 @@
 import fastify from "fastify";
 import fastifyCors from "@fastify/cors";
 import fastifyMultipart from "@fastify/multipart";
+import "./lib/servico-estoque";
 
 import * as Routes from "./routes";
+import { inicializarServicoEstoque } from "./lib/servico-estoque";
+
+inicializarServicoEstoque();
 
 const app = fastify({
   connectionTimeout: 120000,
@@ -10,13 +14,13 @@ const app = fastify({
   bodyLimit: 20 * 1024 * 1024,
 });
 
-// Configuração do CORS
 app.register(fastifyCors, {
   origin: ["https://stockcontrol-six.vercel.app"],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "user-id", "client_key", "Accept"],
   credentials: true,
 });
+
 
 app.register(fastifyMultipart, {
   limits: {
@@ -30,8 +34,13 @@ app.register(fastifyMultipart, {
 });
 
 app.register(Routes.permissoesRoutes);
-app.register(Routes.createUser);
 app.register(Routes.getUsers);
+app.register(Routes.getEmpresa);
+app.register(Routes.getNotificacao);
+app.register(Routes.updateNotificacao);
+app.register(Routes.notificacoesLidas);
+app.register(Routes.verificarEstoque);
+app.register(Routes.createUser);
 app.register(Routes.deleteUser);
 app.register(Routes.updateUser);
 app.register(Routes.exportRoutes);
@@ -48,14 +57,10 @@ app.register(Routes.getCategorias);
 app.register(Routes.deleteCategorias);
 app.register(Routes.updateCategorias);
 app.register(Routes.createEmpresa);
-app.register(Routes.getEmpresa);
 app.register(Routes.deleteEmpresa);
 app.register(Routes.updateEmpresa);
 app.register(Routes.createNotificacao);
-app.register(Routes.getNotificacao);
-app.register(Routes.updateNotificacao);
 app.register(Routes.deleteNotificacao);
-app.register(Routes.notificacoesLidas);
 app.register(Routes.createConvite);
 app.register(Routes.getConvite);
 app.register(Routes.deleteConvite);

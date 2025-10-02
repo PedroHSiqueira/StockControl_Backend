@@ -27,28 +27,43 @@ export async function notificacoesLidas(app: FastifyInstance) {
         where: {
           empresaId: usuario.empresaId,
           NOT: {
-            NotificacaoLida: {
-              some: { usuarioId },
-            },
-          },
+            NotificacaoUsuario: {
+              some: { 
+                usuarioId,
+                lida: true 
+              }
+            }
+          }
         },
         select: { id: true },
       });
 
-      await prisma.notificacaoLida.createMany({
-        data: notificacoesEmpresa.map((n) => ({
-          notificacaoId: n.id,
-          usuarioId,
-        })),
-        skipDuplicates: true,
-      });
+      for (const notificacao of notificacoesEmpresa) {
+        await prisma.notificacaoUsuario.upsert({
+          where: {
+            notificacaoId_usuarioId: {
+              notificacaoId: notificacao.id,
+              usuarioId,
+            },
+          },
+          create: {
+            notificacaoId: notificacao.id,
+            usuarioId,
+            lida: true,
+            somTocado: true,
+          },
+          update: {
+            lida: true,
+            somTocado: true,
+          },
+        });
+      }
 
       return reply.send({
         success: true,
-        message: "Todas as notificações de empresa foram marcadas como lidas",
+        message: "Todas as notificações de empresa foram marcadas como lidas para este usuário",
       });
     } catch (error) {
-      console.error("Erro ao marcar notificações como lidas:", error);
       return reply.status(500).send({
         success: false,
         message: "Erro interno ao marcar notificações como lidas",
@@ -65,7 +80,7 @@ export async function notificacoesLidas(app: FastifyInstance) {
     const { notificacaoId, usuarioId } = paramsSchema.parse(request.params);
 
     try {
-      const registro = await prisma.notificacaoLida.findUnique({
+      const registroNovo = await prisma.notificacaoUsuario.findUnique({
         where: {
           notificacaoId_usuarioId: {
             notificacaoId,
@@ -74,12 +89,30 @@ export async function notificacoesLidas(app: FastifyInstance) {
         },
       });
 
+      if (registroNovo) {
+        return reply.send({
+          success: true,
+          lida: registroNovo.lida,
+        });
+      }
+
+      const notificacao = await prisma.notificacao.findUnique({
+        where: { id: notificacaoId },
+        select: { lida: true, empresaId: true },
+      });
+
+      if (notificacao && !notificacao.empresaId) {
+        return reply.send({
+          success: true,
+          lida: notificacao.lida,
+        });
+      }
+
       return reply.send({
         success: true,
-        lida: !!registro,
+        lida: false,
       });
     } catch (error) {
-      console.error("Erro ao verificar notificação lida:", error);
       return reply.status(500).send({
         success: false,
         message: "Erro interno ao verificar notificação lida",
@@ -95,17 +128,32 @@ export async function notificacoesLidas(app: FastifyInstance) {
     const { usuarioId } = paramsSchema.parse(request.params);
 
     try {
-      const notificacoesLidas = await prisma.notificacaoLida.findMany({
-        where: { usuarioId },
+      const notificacoesLidasNovo = await prisma.notificacaoUsuario.findMany({
+        where: { 
+          usuarioId,
+          lida: true 
+        },
         select: { notificacaoId: true },
       });
 
+      const notificacoesPessoaisLidas = await prisma.notificacao.findMany({
+        where: { 
+          usuarioId,
+          lida: true 
+        },
+        select: { id: true },
+      });
+
+      const todasNotificacoesLidas = [
+        ...notificacoesLidasNovo.map(n => n.notificacaoId),
+        ...notificacoesPessoaisLidas.map(n => n.id)
+      ];
+
       return reply.send({
         success: true,
-        notificacoesLidas,
+        notificacoesLidas: todasNotificacoesLidas,
       });
     } catch (error) {
-      console.error("Erro ao obter notificações lidas:", error);
       return reply.status(500).send({
         success: false,
         message: "Erro interno ao obter notificações lidas",
@@ -122,7 +170,7 @@ export async function notificacoesLidas(app: FastifyInstance) {
     const { notificacaoId, usuarioId } = bodySchema.parse(request.body);
 
     try {
-      await prisma.notificacaoLida.deleteMany({
+      await prisma.notificacaoUsuario.deleteMany({
         where: {
           notificacaoId,
           usuarioId,
@@ -134,7 +182,6 @@ export async function notificacoesLidas(app: FastifyInstance) {
         message: "Registro de notificação lida removido com sucesso",
       });
     } catch (error) {
-      console.error("Erro ao remover registro de notificação lida:", error);
       return reply.status(500).send({
         success: false,
         message: "Erro interno ao remover registro de notificação lida",
