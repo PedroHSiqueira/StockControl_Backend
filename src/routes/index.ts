@@ -52,10 +52,12 @@ export { createCliente } from "./clientes/create-cliente";
 export { getCliente } from "./clientes/get-cliente";
 export { updateCliente } from "./clientes/update-cliente";
 export { deleteCliente } from "./clientes/delete-cliente";
-export { verificarEstoque } from "./estoque/verificar-estoque";
-export { permissoesRoutes } from "./permissoes/permissoes";
+export { verificarEstoque } from "./estoque/create-verificacao-estoque";
+export { getPermissoes } from "./permissoes/get-permissoes";
+export { updatePermissoes } from "./permissoes/update-permissoes";
 
-export { movimentacoesEstoqueRoutes } from "./movimentacoes/movimentacoes-estoque";
+export { getMovimentacoes } from "./movimentacoes/get-movimentacoes";
+export { createMovimentacoes } from "./movimentacoes/create-movimentacoes";
 
 export { getpedidos } from "./pedidos/get-pedidos";
 export { postpedidos } from "./pedidos/post-pedidos";
