@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { prisma } from "../../lib/prisma";
-import { calcularSaldoProduto, calcularSaldosProdutos } from "../../lib/estoqueUtils";
+import { calcularSaldoProduto } from "../../lib/estoqueUtils";
 
 export async function getMovimentacoes(app: FastifyInstance) {
   app.get("/movimentacoes-estoque/produto/:produtoId", async (request, reply) => {
