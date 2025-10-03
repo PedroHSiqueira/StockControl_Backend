@@ -1,5 +1,5 @@
 export { exportRoutes } from "./export/exportDados";
-export { catalogoEmpresa } from "./catalogo/catalogo-empresa";
+export { catalogoEmpresa } from "./catalogo/get-catalogo-empresa";
 export { toggleCatalogo } from "./catalogo/alterar-catalogo";
 
 export { createUser } from "./usuarios/create-user";

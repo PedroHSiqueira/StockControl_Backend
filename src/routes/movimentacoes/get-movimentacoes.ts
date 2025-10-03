@@ -34,16 +34,4 @@ export async function getMovimentacoes(app: FastifyInstance) {
       return reply.status(500).send({ mensagem: "Erro interno" });
     }
   });
-
-  app.post("/produtos/saldos", async (request, reply) => {
-    try {
-      const { produtoIds } = request.body as { produtoIds: number[] };
-      
-      const saldos = await calcularSaldosProdutos(produtoIds);
-      return reply.send(saldos);
-    } catch (error) {
-      console.error("Erro ao calcular saldos:", error);
-      return reply.status(500).send({ mensagem: "Erro interno" });
-    }
-  });
 }
