@@ -1,6 +1,8 @@
+import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import fastify from "fastify";
 import fastifyCors from "@fastify/cors";
 import fastifyMultipart from "@fastify/multipart";
+import fastifyJwt from "@fastify/jwt";
 import "./lib/servico-estoque";
 
 import * as Routes from "./routes";
@@ -15,12 +17,11 @@ const app = fastify({
 });
 
 app.register(fastifyCors, {
-  origin: ["https://stockcontrol-six.vercel.app"],
+  origin: ["http://localhost:3000"],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "user-id", "client_key", "Accept"],
   credentials: true,
 });
-
 
 app.register(fastifyMultipart, {
   limits: {
@@ -32,6 +33,8 @@ app.register(fastifyMultipart, {
   },
   attachFieldsToBody: false,
 });
+
+app.register(fastifyJwt, { secret: process.env.JWT_SECRET || "supersecret" });
 
 app.register(Routes.permissoesRoutes);
 app.register(Routes.getUsers);
@@ -81,6 +84,14 @@ app.register(Routes.getLogs);
 app.register(Routes.emailRoutes);
 app.register(Routes.pedidosRoutes);
 app.register(Routes.movimentacoesEstoqueRoutes);
+
+app.decorate("authenticate", async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    await request.jwtVerify();
+  } catch (err) {
+    return reply.status(401).send({ message: "Token inválido ou expirado" });
+  }
+});
 
 app.get("/", async (request, reply) => {
   return reply.status(200).send({ mensagem: "API Fastfy: StockControl" });

@@ -2,10 +2,14 @@ import { FastifyInstance, FastifyRequest } from "fastify";
 import { prisma } from "../../lib/prisma";
 import cloudinary from "../../config/cloudinaryConfig";
 import slugify from "slugify";
+import { UnauthorizedError } from "../../exceptions/UnauthorizedError";
 
 export async function createEmpresa(app: FastifyInstance) {
   app.post("/empresa/upload-foto", async (request: FastifyRequest, reply) => {
     try {
+      await request.jwtVerify().catch(() => {
+        throw new UnauthorizedError("Token inválido ou expirado");
+      });
 
       const userId = request.headers["user-id"] as string;
       if (!userId) {
@@ -26,8 +30,6 @@ export async function createEmpresa(app: FastifyInstance) {
       }
 
       const fileBuffer = Buffer.concat(chunks);
-
-
 
       const result = await new Promise((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
@@ -53,14 +55,13 @@ export async function createEmpresa(app: FastifyInstance) {
         success: true,
         message: "Upload da foto realizado com sucesso",
         fotoUrl: (result as any)?.secure_url,
-        fileSize: fileBuffer.length
+        fileSize: fileBuffer.length,
       });
-
     } catch (error) {
       console.error("Erro no upload separado:", error);
       return reply.status(500).send({
         error: "Erro no upload da foto",
-        details: error instanceof Error ? error.message : String(error)
+        details: error instanceof Error ? error.message : String(error),
       });
     }
   });
@@ -69,23 +70,16 @@ export async function createEmpresa(app: FastifyInstance) {
     try {
       const userId = request.headers["user-id"] as string | undefined;
 
+      await request.jwtVerify().catch((err) => {
+        throw new UnauthorizedError("Token inválido ou expirado");
+      });
+
       if (!userId) {
         return reply.status(401).send({ mensagem: "Usuário não autenticado" });
       }
 
       const body = request.body as any;
-      const {
-        nome,
-        email,
-        telefone,
-        endereco,
-        pais,
-        estado,
-        cidade,
-        cep,
-        dominioSolicitado,
-        fotoUrl 
-      } = body;
+      const { nome, email, telefone, endereco, pais, estado, cidade, cep, dominioSolicitado, fotoUrl } = body;
 
       if (!nome?.trim() || !email?.trim()) {
         return reply.status(400).send({
@@ -99,13 +93,13 @@ export async function createEmpresa(app: FastifyInstance) {
 
       const emailExistente = await prisma.empresa.findUnique({
         where: { email: email.trim().toLowerCase() },
-        select: { id: true }
+        select: { id: true },
       });
 
       if (emailExistente) {
         return reply.status(400).send({
           mensagem: "Este email já está em uso por outra empresa",
-          error: "EMAIL_ALREADY_EXISTS"
+          error: "EMAIL_ALREADY_EXISTS",
         });
       }
 
@@ -185,18 +179,18 @@ export async function createEmpresa(app: FastifyInstance) {
         ...empresa,
         mensagem: "Empresa criada con sucesso!",
         dominio: finalSlug,
-        urlCatalogo: `${process.env.NEXT_PUBLIC_URL}/catalogo/${finalSlug}`
+        urlCatalogo: `${process.env.NEXT_PUBLIC_URL}/catalogo/${finalSlug}`,
       });
     } catch (error) {
       console.error("Erro ao criar empresa:", error);
-      
-      if (typeof error === "object" && error !== null && "code" in error && (error as any).code === 'P2002') {
+
+      if (typeof error === "object" && error !== null && "code" in error && (error as any).code === "P2002") {
         return reply.status(400).send({
           mensagem: "Email ou domínio já está em uso",
-          error: "DUPLICATE_ENTRY"
+          error: "DUPLICATE_ENTRY",
         });
       }
-      
+
       return reply.status(500).send({
         mensagem: "Erro interno no servidor",
         error: error instanceof Error ? error.message : "Erro desconhecido",

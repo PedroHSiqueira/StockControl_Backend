@@ -1,7 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { prisma } from "../../lib/prisma";
 import bcrypt from "bcrypt";
+import { prisma } from "../../lib/prisma";
 
 export async function loginUser(app: FastifyInstance) {
   app.post("/usuario/login", async (request, reply) => {
@@ -13,22 +13,28 @@ export async function loginUser(app: FastifyInstance) {
     const { email, senha } = loginUserBody.parse(request.body);
 
     const user = await prisma.usuario.findUnique({
-      where: {
-        email: email,
-      },
+      where: { email },
     });
 
     if (!user) {
-      reply.status(404).send({ message: "Usuário não encontrado" });
-      return;
+      return reply.status(404).send({ message: "Usuário não encontrado" });
     }
+
     const senhaValida = bcrypt.compareSync(senha, user.senha);
 
     if (!senhaValida) {
-      reply.status(401).send({ message: "Senha inválida" });
-      return;
+      return reply.status(401).send({ message: "Senha inválida" });
     }
 
-    reply.send({ message: "Usuário logado com sucesso", nome: user.nome, id: user.id });
+    const token = app.jwt.sign({ id: user.id, nome: user.nome, email: user.email }, {
+      expiresIn: "1h"
+    });
+
+    return reply.send({
+      message: "Usuário logado com sucesso",
+      token,
+      nome: user.nome,
+      id: user.id,
+    });
   });
 }

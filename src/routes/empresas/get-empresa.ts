@@ -1,8 +1,12 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { prisma } from "../../lib/prisma";
+import { UnauthorizedError } from "../../exceptions/UnauthorizedError";
 
 export async function getEmpresa(app: FastifyInstance) {
   app.get("/empresa", async (request, reply) => {
+    await request.jwtVerify().catch(() => {
+      throw new UnauthorizedError("Token inválido ou expirado");
+    });
     const empresas = await prisma.empresa.findMany({
       include: {
         Produto: true,
@@ -35,41 +39,43 @@ export async function getEmpresa(app: FastifyInstance) {
     reply.send(usuario.empresa);
   });
 
-
   app.get("/empresa/verificar-email/:email", async (request: FastifyRequest, reply: FastifyReply) => {
     try {
+      await request.jwtVerify().catch(() => {
+        throw new UnauthorizedError("Token inválido ou expirado");
+      });
       const { email } = request.params as { email: string };
 
       const url = request.url;
-      const hasEmpresaId = url.includes('?empresaId=');
+      const hasEmpresaId = url.includes("?empresaId=");
 
-      let empresaId = '';
+      let empresaId = "";
       if (hasEmpresaId) {
-        const urlParams = new URLSearchParams(url.split('?')[1]);
-        empresaId = urlParams.get('empresaId') || '';
+        const urlParams = new URLSearchParams(url.split("?")[1]);
+        empresaId = urlParams.get("empresaId") || "";
       }
 
       const whereClauseEmpresa = empresaId
         ? {
-          email: email.toLowerCase().trim(),
-          id: {
-            not: empresaId
+            email: email.toLowerCase().trim(),
+            id: {
+              not: empresaId,
+            },
           }
-        }
         : {
-          email: email.toLowerCase().trim()
-        };
+            email: email.toLowerCase().trim(),
+          };
 
       const empresaExistente = await prisma.empresa.findFirst({
         where: whereClauseEmpresa,
-        select: { id: true, nome: true }
+        select: { id: true, nome: true },
       });
 
       const usuarioExistente = await prisma.usuario.findFirst({
         where: {
-          email: email.toLowerCase().trim()
+          email: email.toLowerCase().trim(),
         },
-        select: { id: true, nome: true }
+        select: { id: true, nome: true },
       });
 
       const emailExiste = !!empresaExistente || !!usuarioExistente;
@@ -86,7 +92,7 @@ export async function getEmpresa(app: FastifyInstance) {
         existe: emailExiste,
         empresaExistente: empresaExistente,
         usuarioExistente: usuarioExistente,
-        mensagem: mensagem
+        mensagem: mensagem,
       });
     } catch (error) {
       console.error("Erro ao verificar email:", error);
@@ -96,21 +102,22 @@ export async function getEmpresa(app: FastifyInstance) {
 
   app.get("/empresa/verificar-dominio/:dominio", async (request: FastifyRequest, reply) => {
     try {
+      await request.jwtVerify().catch(() => {
+        throw new UnauthorizedError("Token inválido ou expirado");
+      });
       const { dominio } = request.params as { dominio: string };
 
-      const dominioFormatado = dominio.toLowerCase().trim().replace(/\s+/g, '-');
+      const dominioFormatado = dominio.toLowerCase().trim().replace(/\s+/g, "-");
 
       const empresaExistente = await prisma.empresa.findUnique({
         where: { slug: dominioFormatado },
-        select: { id: true }
+        select: { id: true },
       });
 
       return reply.send({
         disponivel: !empresaExistente,
         dominioSugerido: dominioFormatado,
-        mensagem: empresaExistente
-          ? "Este domínio já está em uso"
-          : "Domínio disponível"
+        mensagem: empresaExistente ? "Este domínio já está em uso" : "Domínio disponível",
       });
     } catch (error) {
       console.error("Erro ao verificar domínio:", error);
@@ -120,8 +127,10 @@ export async function getEmpresa(app: FastifyInstance) {
 
   app.get("/empresa/status-ativacao/:idEmpresa", async (request: FastifyRequest, reply: FastifyReply) => {
     const { idEmpresa } = request.params as { idEmpresa: string };
-
     try {
+      await request.jwtVerify().catch(() => {
+        throw new UnauthorizedError("Token inválido ou expirado");
+      });
       const empresa = await prisma.empresa.findUnique({
         where: { id: idEmpresa },
         include: {
@@ -129,10 +138,10 @@ export async function getEmpresa(app: FastifyInstance) {
             select: {
               chave: true,
               utilizada: true,
-              dataUso: true
-            }
-          }
-        }
+              dataUso: true,
+            },
+          },
+        },
       });
 
       if (!empresa) {
@@ -144,7 +153,7 @@ export async function getEmpresa(app: FastifyInstance) {
       return reply.send({
         ativada,
         chave: empresa.ChaveAtivacao?.chave || null,
-        dataAtivacao: empresa.ChaveAtivacao?.dataUso || null
+        dataAtivacao: empresa.ChaveAtivacao?.dataUso || null,
       });
     } catch (error) {
       console.error("Erro ao verificar status:", error);
@@ -154,6 +163,10 @@ export async function getEmpresa(app: FastifyInstance) {
 
   app.get("/empresa/empresa/:idEmpresa", async (request: FastifyRequest, reply: FastifyReply) => {
     const { idEmpresa } = request.params as { idEmpresa: string };
+
+    await request.jwtVerify().catch(() => {
+      throw new UnauthorizedError("Token inválido ou expirado");
+    });
 
     const empresa = await prisma.empresa.findUnique({
       where: {

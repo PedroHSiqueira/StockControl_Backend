@@ -1,10 +1,14 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
 import { prisma } from "../../lib/prisma";
 import cloudinary from "../../config/cloudinaryConfig";
+import { UnauthorizedError } from "../../exceptions/UnauthorizedError";
 
 export async function updateEmpresa(app: FastifyInstance) {
   app.put("/empresa/:id/upload-foto", async (request: FastifyRequest, reply) => {
     try {
+      await request.jwtVerify().catch(() => {
+        throw new UnauthorizedError("Token inválido ou expirado");
+      });
 
       const { id } = request.params as { id: string };
       const userId = request.headers["user-id"] as string;
@@ -45,7 +49,6 @@ export async function updateEmpresa(app: FastifyInstance) {
 
       const fileBuffer = Buffer.concat(chunks);
 
-
       if (usuario.empresa.foto) {
         const publicId = usuario.empresa.foto.split("/").pop()?.split(".")[0];
         if (publicId) {
@@ -77,20 +80,22 @@ export async function updateEmpresa(app: FastifyInstance) {
         success: true,
         message: "Upload da foto realizado com sucesso",
         fotoUrl: (result as any)?.secure_url,
-        fileSize: fileBuffer.length
+        fileSize: fileBuffer.length,
       });
-
     } catch (error) {
       console.error("Erro no upload da foto para update:", error);
       return reply.status(500).send({
         error: "Erro no upload da foto",
-        details: error instanceof Error ? error.message : String(error)
+        details: error instanceof Error ? error.message : String(error),
       });
     }
   });
 
   app.put("/empresa/:id/:usuarioId", async (request: FastifyRequest, reply) => {
     try {
+      await request.jwtVerify().catch(() => {
+        throw new UnauthorizedError("Token inválido ou expirado");
+      });
       const { id, usuarioId } = request.params as { id: string; usuarioId: string };
 
       const usuario = await prisma.usuario.findUnique({
@@ -111,17 +116,7 @@ export async function updateEmpresa(app: FastifyInstance) {
       }
 
       const body = request.body as any;
-      const {
-        nome,
-        email,
-        telefone,
-        endereco,
-        pais,
-        estado,
-        cidade,
-        cep,
-        fotoUrl 
-      } = body;
+      const { nome, email, telefone, endereco, pais, estado, cidade, cep, fotoUrl } = body;
 
       if (usuario.tipo === "ADMIN") {
         if (nome && nome !== usuario.empresa.nome) {
