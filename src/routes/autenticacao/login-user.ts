@@ -27,7 +27,7 @@ export async function loginUser(app: FastifyInstance) {
     }
 
     const token = app.jwt.sign({ id: user.id, nome: user.nome, email: user.email }, {
-      expiresIn: "1h"
+      expiresIn: "7d"
     });
 
     return reply.send({
