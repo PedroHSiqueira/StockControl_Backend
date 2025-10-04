@@ -14,36 +14,36 @@ datasource db {
 }
 
 model Pedido {
-  id            String      @id @default(uuid()) @db.VarChar(36)
-  numero        String      @unique @db.VarChar(20)
-  fornecedor    Fornecedor  @relation(fields: [fornecedorId], references: [id])
-  fornecedorId  String      @db.VarChar(36)
-  empresa       Empresa     @relation(fields: [empresaId], references: [id])
-  empresaId     String      @db.VarChar(36)
-  usuario       Usuario     @relation(fields: [usuarioId], references: [id])
-  usuarioId     String      @db.VarChar(36)
-  observacoes   String?     @db.VarChar(500)
-  status        StatusPedido
-  total         Float
-  itens         ItemPedido[]
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id           String       @id @default(uuid()) @db.VarChar(36)
+  numero       String       @unique @db.VarChar(20)
+  fornecedor   Fornecedor   @relation(fields: [fornecedorId], references: [id])
+  fornecedorId String       @db.VarChar(36)
+  empresa      Empresa      @relation(fields: [empresaId], references: [id])
+  empresaId    String       @db.VarChar(36)
+  usuario      Usuario      @relation(fields: [usuarioId], references: [id])
+  usuarioId    String       @db.VarChar(36)
+  observacoes  String?      @db.VarChar(500)
+  status       StatusPedido
+  total        Float
+  itens        ItemPedido[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
   @@map("pedidos")
 }
 
 model ItemPedido {
-  id                  String   @id @default(uuid()) @db.VarChar(36)
-  pedido              Pedido   @relation(fields: [pedidoId], references: [id])
-  pedidoId           String   @db.VarChar(36)
-  produto            Produto  @relation(fields: [produtoId], references: [id])
-  produtoId          Int
+  id                   String   @id @default(uuid()) @db.VarChar(36)
+  pedido               Pedido   @relation(fields: [pedidoId], references: [id])
+  pedidoId             String   @db.VarChar(36)
+  produto              Produto  @relation(fields: [produtoId], references: [id])
+  produtoId            Int
   quantidadeSolicitada Int
-  quantidadeAtendida  Int      @default(0)
-  precoUnitario      Float
-  observacao         String?   @db.VarChar(255)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  quantidadeAtendida   Int      @default(0)
+  precoUnitario        Float
+  observacao           String?  @db.VarChar(255)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   @@map("itens_pedido")
 }
@@ -92,6 +92,13 @@ model Usuario {
   empresa                  Empresa?      @relation(fields: [empresaId], references: [id])
   empresaId                String?       @db.VarChar(36)
   permissoesPersonalizadas Boolean       @default(false)
+  emailVerificado          Boolean       @default(false)
+  codigoVerificacao        String?       @db.VarChar(6)
+  codigoExpiracao          DateTime?
+  doisFAToken              String?       @db.VarChar(6)
+  doisFAExpiracao          DateTime?
+  doisFAAprovado           Boolean       @default(false)
+  doisFADataAprovado       DateTime?
   createdAt                DateTime      @default(now())
   updatedAt                DateTime      @updatedAt
   Notificacao              Notificacao[]
@@ -103,10 +110,10 @@ model Usuario {
   UsuarioPermissao    UsuarioPermissao[]
   MovimentacaoEstoque MovimentacaoEstoque[]
   Inventario          Inventario[]
+  Pedido              Pedido[]
+  NotificacaoUsuario  NotificacaoUsuario[]
 
   @@map("usuarios")
-  Pedido Pedido[]
-  NotificacaoUsuario NotificacaoUsuario[]
 }
 
 model Fornecedor {
@@ -122,9 +129,9 @@ model Fornecedor {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   Produto   Produto[]
+  Pedido    Pedido[]
 
   @@map("fornecedores")
-  Pedido Pedido[]
 }
 
 model Empresa {
@@ -153,10 +160,10 @@ model Empresa {
   cliente             cliente[]
   MovimentacaoEstoque MovimentacaoEstoque[]
   Inventario          Inventario[]
+  Pedido              Pedido[]
+  NotificacaoEstoque  NotificacaoEstoque[]
 
   @@map("empresas")
-  Pedido Pedido[]
-  NotificacaoEstoque NotificacaoEstoque[]
 }
 
 model cliente {
@@ -181,8 +188,8 @@ model ChaveAtivacao {
   chave     String    @id @default(uuid()) @db.VarChar(36)
   empresa   Empresa?  @relation(fields: [empresaId], references: [id])
   empresaId String?   @unique @db.VarChar(36)
-  utilizada Boolean   @default(false) 
-  dataUso   DateTime? 
+  utilizada Boolean   @default(false)
+  dataUso   DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
@@ -190,30 +197,30 @@ model ChaveAtivacao {
 }
 
 model Produto {
-  id             Int                   @id @default(autoincrement())
-  nome           String                @db.VarChar(60)
-  descricao      String                @db.VarChar(255)
-  preco          Float
-  quantidadeMin  Int                   @default(0)
-  foto           String?               @db.VarChar(255)
-  noCatalogo     Boolean               @default(false)
-  usuarioId      String?               @db.VarChar(36)
-  usuario        Usuario?              @relation(fields: [usuarioId], references: [id])
-  fornecedor     Fornecedor?           @relation(fields: [fornecedorId], references: [id])
-  fornecedorId   String?               @db.VarChar(36)
-  categoria      categoria?            @relation(fields: [categoriaId], references: [id])
-  categoriaId    String?               @db.VarChar(36)
-  empresa        Empresa?              @relation(fields: [empresaId], references: [id])
-  empresaId      String?               @db.VarChar(36)
-  createdAt      DateTime              @default(now())
-  updatedAt      DateTime              @updatedAt
-  Venda          Venda[]
-  Movimentacoes  MovimentacaoEstoque[]
-  ItemInventario ItemInventario[]
+  id                 Int                   @id @default(autoincrement())
+  nome               String                @db.VarChar(60)
+  descricao          String                @db.VarChar(255)
+  preco              Float
+  quantidadeMin      Int                   @default(0)
+  foto               String?               @db.VarChar(255)
+  noCatalogo         Boolean               @default(false)
+  usuarioId          String?               @db.VarChar(36)
+  usuario            Usuario?              @relation(fields: [usuarioId], references: [id])
+  fornecedor         Fornecedor?           @relation(fields: [fornecedorId], references: [id])
+  fornecedorId       String?               @db.VarChar(36)
+  categoria          categoria?            @relation(fields: [categoriaId], references: [id])
+  categoriaId        String?               @db.VarChar(36)
+  empresa            Empresa?              @relation(fields: [empresaId], references: [id])
+  empresaId          String?               @db.VarChar(36)
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  Venda              Venda[]
+  Movimentacoes      MovimentacaoEstoque[]
+  ItemInventario     ItemInventario[]
+  ItemPedido         ItemPedido[]
+  NotificacaoEstoque NotificacaoEstoque[]
 
   @@map("produtos")
-  ItemPedido ItemPedido[]
-  NotificacaoEstoque NotificacaoEstoque[]
 }
 
 model Venda {
@@ -248,22 +255,22 @@ model categoria {
 }
 
 model Notificacao {
-  id              String            @id @default(uuid()) @db.VarChar(36)
-  titulo          String            @db.VarChar(60)
-  descricao       String            @db.VarChar(255)
-  lida            Boolean           @default(false)
-  empresa         Empresa?          @relation(fields: [empresaId], references: [id])
-  empresaId       String?           @db.VarChar(36)
-  usuarioId       String?           @db.VarChar(36)
-  usuario         Usuario?          @relation(fields: [usuarioId], references: [id])
-  conviteId       String?           @unique @db.VarChar(36)
-  convite         Convite?          @relation(fields: [conviteId], references: [id])
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  NotificacaoLida NotificacaoLida[]
+  id                 String               @id @default(uuid()) @db.VarChar(36)
+  titulo             String               @db.VarChar(60)
+  descricao          String               @db.VarChar(255)
+  lida               Boolean              @default(false)
+  empresa            Empresa?             @relation(fields: [empresaId], references: [id])
+  empresaId          String?              @db.VarChar(36)
+  usuarioId          String?              @db.VarChar(36)
+  usuario            Usuario?             @relation(fields: [usuarioId], references: [id])
+  conviteId          String?              @unique @db.VarChar(36)
+  convite            Convite?             @relation(fields: [conviteId], references: [id])
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  NotificacaoLida    NotificacaoLida[]
+  NotificacaoUsuario NotificacaoUsuario[]
 
   @@map("notificacoes")
-  NotificacaoUsuario NotificacaoUsuario[]
 }
 
 model Convite {
@@ -357,31 +364,31 @@ model ItemInventario {
 }
 
 model NotificacaoEstoque {
-  id          String   @id @default(uuid()) @db.VarChar(36)
-  produto     Produto  @relation(fields: [produtoId], references: [id])
-  produtoId   Int
-  empresa     Empresa  @relation(fields: [empresaId], references: [id])
-  empresaId   String   @db.VarChar(36)
-  quantidade  Int
-  tipo        TipoNotificacaoEstoque
-  enviadaEm   DateTime @default(now())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String                 @id @default(uuid()) @db.VarChar(36)
+  produto    Produto                @relation(fields: [produtoId], references: [id])
+  produtoId  Int
+  empresa    Empresa                @relation(fields: [empresaId], references: [id])
+  empresaId  String                 @db.VarChar(36)
+  quantidade Int
+  tipo       TipoNotificacaoEstoque
+  enviadaEm  DateTime               @default(now())
+  createdAt  DateTime               @default(now())
+  updatedAt  DateTime               @updatedAt
 
   @@unique([produtoId, enviadaEm])
   @@map("notificacoes_estoque")
 }
 
 model NotificacaoUsuario {
-  id              String            @id @default(uuid()) @db.VarChar(36)
-  notificacao     Notificacao       @relation(fields: [notificacaoId], references: [id])
-  notificacaoId   String            @db.VarChar(36)
-  usuario         Usuario           @relation(fields: [usuarioId], references: [id])
-  usuarioId       String            @db.VarChar(36)
-  lida            Boolean           @default(false)
-  somTocado       Boolean           @default(false)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  id            String      @id @default(uuid()) @db.VarChar(36)
+  notificacao   Notificacao @relation(fields: [notificacaoId], references: [id])
+  notificacaoId String      @db.VarChar(36)
+  usuario       Usuario     @relation(fields: [usuarioId], references: [id])
+  usuarioId     String      @db.VarChar(36)
+  lida          Boolean     @default(false)
+  somTocado     Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
   @@unique([notificacaoId, usuarioId])
   @@map("notificacoes_usuario")

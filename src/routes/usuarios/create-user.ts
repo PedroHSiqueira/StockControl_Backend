@@ -35,6 +35,10 @@ function validarSenha(senha: string) {
   return mensagens;
 }
 
+function gerarCodigoVerificacao(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
 export async function createUser(app: FastifyInstance) {
   app.post("/usuarios", async (request, reply) => {
     const criarUsuarioBody = z.object({
@@ -46,6 +50,14 @@ export async function createUser(app: FastifyInstance) {
 
     const { nome, email, senha, tipo } = criarUsuarioBody.parse(request.body);
 
+    const usuarioExistente = await prisma.usuario.findUnique({
+      where: { email },
+    });
+
+    if (usuarioExistente) {
+      return reply.status(400).send({ mensagem: "Email já cadastrado" });
+    }
+
     const erros = validarSenha(senha);
     if (erros.length > 0) {
       return reply.status(400).send({ mensagem: "Senha Inválida verifique e tente novamente" });
@@ -54,15 +66,29 @@ export async function createUser(app: FastifyInstance) {
     const salt = bcrypt.genSaltSync(12);
     const hash = bcrypt.hashSync(senha, salt);
 
+    const codigoVerificacao = gerarCodigoVerificacao();
+    const codigoExpiracao = new Date(Date.now() + 10 * 60 * 1000);
+
     const usuario = await prisma.usuario.create({
       data: {
         nome,
         email,
         senha: hash,
         tipo,
+        emailVerificado: false,
+        codigoVerificacao,
+        codigoExpiracao,
+        doisFAAprovado: true,
+        doisFADataAprovado: new Date(), 
       },
     });
 
-    return reply.status(201).send(usuario);
+    return reply.status(201).send({
+      id: usuario.id,
+      nome: usuario.nome,
+      email: usuario.email,
+      mensagem: "Usuário criado com sucesso. Você será redirecionado para verificar seu email.",
+      emailVerificado: false
+    });
   });
 }

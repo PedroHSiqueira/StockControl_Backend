@@ -55,6 +55,7 @@ export { deleteCliente } from "./clientes/delete-cliente";
 export { verificarEstoque } from "./estoque/create-verificacao-estoque";
 export { getPermissoes } from "./permissoes/get-permissoes";
 export { updatePermissoes } from "./permissoes/update-permissoes";
+export { verificacaoEmailRoutes } from "./autenticacao/verificacao-email";
 
 export { getMovimentacoes } from "./movimentacoes/get-movimentacoes";
 export { createMovimentacoes } from "./movimentacoes/create-movimentacoes";
