@@ -5,7 +5,6 @@ async function migrarDadosExistentes() {
   const produtos = await prisma.produto.findMany();
   
   for (const produto of produtos) {
-    console.log(`Migrando produto: ${produto.nome} (ID: ${produto.id})`);
     
     if (produto.quantidadeMin > 0) {
       await prisma.movimentacaoEstoque.create({
@@ -41,7 +40,6 @@ async function migrarDadosExistentes() {
     }
   }
   
-  console.log("Migração concluída com sucesso!");
 }
 
 migrarDadosExistentes()

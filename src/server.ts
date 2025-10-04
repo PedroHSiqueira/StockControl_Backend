@@ -17,7 +17,7 @@ const app = fastify({
 });
 
 app.register(fastifyCors, {
-  origin: ["http://localhost:3000"],
+  origin: ["https://stockcontrol-six.vercel.app"],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "user-id", "client_key", "Accept"],
   credentials: true,
@@ -36,7 +36,8 @@ app.register(fastifyMultipart, {
 
 app.register(fastifyJwt, { secret: process.env.JWT_SECRET || "supersecret" });
 
-app.register(Routes.permissoesRoutes);
+app.register(Routes.getPermissoes);
+app.register(Routes.updatePermissoes);
 app.register(Routes.getUsers);
 app.register(Routes.getEmpresa);
 app.register(Routes.getNotificacao);
@@ -82,8 +83,11 @@ app.register(Routes.catalogoEmpresa);
 app.register(Routes.toggleCatalogo);
 app.register(Routes.getLogs);
 app.register(Routes.emailRoutes);
-app.register(Routes.pedidosRoutes);
-app.register(Routes.movimentacoesEstoqueRoutes);
+app.register(Routes.postpedidos);
+app.register(Routes.getpedidos);
+app.register(Routes.updatepedidos);
+app.register(Routes.getMovimentacoes);
+app.register(Routes.createMovimentacoes);
 
 app.decorate("authenticate", async (request: FastifyRequest, reply: FastifyReply) => {
   try {

@@ -1,6 +1,11 @@
 export { exportRoutes } from "./export/exportDados";
+<<<<<<< HEAD
 export { catalogoEmpresa } from "./catalogo/get-catalogo";
 export { toggleCatalogo } from "./catalogo/update-catalogo";
+=======
+export { catalogoEmpresa } from "./catalogo/get-catalogo-empresa";
+export { toggleCatalogo } from "./catalogo/alterar-catalogo";
+>>>>>>> c74795352035d21a8d5287610013aec9b46e5058
 
 export { createUser } from "./usuarios/create-user";
 export { getUsers } from "./usuarios/get-users";
@@ -52,10 +57,21 @@ export { createCliente } from "./clientes/create-cliente";
 export { getCliente } from "./clientes/get-cliente";
 export { updateCliente } from "./clientes/update-cliente";
 export { deleteCliente } from "./clientes/delete-cliente";
+<<<<<<< HEAD
 export { verificarEstoque } from "./estoque/post-storage";
 export { permissoesRoutes } from "./permissoes/permissoes";
 
 export { movimentacoesEstoqueRoutes } from "./movimentacoes/post-movimentacoes";
+=======
+export { verificarEstoque } from "./estoque/create-verificacao-estoque";
+export { getPermissoes } from "./permissoes/get-permissoes";
+export { updatePermissoes } from "./permissoes/update-permissoes";
 
-export { pedidosRoutes } from "./pedidos/pedidos";
+export { getMovimentacoes } from "./movimentacoes/get-movimentacoes";
+export { createMovimentacoes } from "./movimentacoes/create-movimentacoes";
+>>>>>>> c74795352035d21a8d5287610013aec9b46e5058
+
+export { getpedidos } from "./pedidos/get-pedidos";
+export { postpedidos } from "./pedidos/post-pedidos";
+export { updatepedidos } from "./pedidos/update-pedidos";
 
