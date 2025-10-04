@@ -1,7 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { prisma } from "../../lib/prisma";
-import bcrypt from "bcrypt";
 import { usuarioTemPermissao } from "../../lib/permissaoUtils";
 
 export async function updateCliente(app: FastifyInstance) {
