@@ -94,7 +94,7 @@ app.decorate("authenticate", async (request: FastifyRequest, reply: FastifyReply
 });
 
 app.get("/", async (request, reply) => {
-  return reply.status(200).send({ mensagem: "API Fastfy: StockControl" });
+  return reply.status(200).send({ mensagem: "API Fastify: StockControl" });
 });
 
 app.listen({ port: 3001 }).then(() => {

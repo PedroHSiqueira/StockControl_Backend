@@ -2,7 +2,7 @@ import { FastifyInstance } from "fastify";
 import { prisma } from "../../lib/prisma";
 import { usuarioTemPermissao } from "../../lib/permissaoUtils";
 import { criarPedidoCompleto, atualizarStatusPedido, concluirPedidoComEstoque } from "../../lib/pedidoUtils";
-import { UnauthorizedError } from "../../exceptions/UnauthorizedError";
+import { UnauthorizedError } from "../../exceptions/UnauthorizedException";
 
 export async function pedidosRoutes(app: FastifyInstance) {
   app.post("/pedidos", async (request, reply) => {
@@ -11,7 +11,9 @@ export async function pedidosRoutes(app: FastifyInstance) {
         throw new UnauthorizedError("Token inválido ou expirado");
       });
       const userId = request.headers["user-id"] as string;
-      if (!userId) return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+      if (!userId){
+        throw new UnauthorizedError("Usuário não autenticado");
+      }
 
       const temPermissao = await usuarioTemPermissao(userId, "pedidos_criar");
       if (!temPermissao) return reply.status(403).send({ mensagem: "Acesso negado" });
@@ -50,7 +52,10 @@ export async function pedidosRoutes(app: FastifyInstance) {
         itens: resultado.itens,
       });
     } catch (error) {
-      console.error("Erro ao criar pedido:", error);
+      if (error instanceof UnauthorizedError) {
+        return reply.status(401).send({ error: error.message });
+      }
+
       return reply.status(500).send({ mensagem: "Erro interno no servidor" });
     }
   });
@@ -62,7 +67,9 @@ export async function pedidosRoutes(app: FastifyInstance) {
       });
 
       const userId = request.headers["user-id"] as string;
-      if (!userId) return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+      if (!userId){
+        throw new UnauthorizedError("Usuário não autenticado");
+      }
 
       const temPermissao = await usuarioTemPermissao(userId, "pedidos_visualizar");
       if (!temPermissao) return reply.status(403).send({ mensagem: "Acesso negado" });
@@ -92,7 +99,10 @@ export async function pedidosRoutes(app: FastifyInstance) {
 
       return reply.send(pedidosFormatados);
     } catch (error) {
-      console.error("Erro ao buscar pedidos:", error);
+      if (error instanceof UnauthorizedError) {
+        return reply.status(401).send({ error: error.message });
+      }
+
       return reply.status(500).send({ mensagem: "Erro interno no servidor" });
     }
   });
@@ -103,7 +113,9 @@ export async function pedidosRoutes(app: FastifyInstance) {
         throw new UnauthorizedError("Token inválido ou expirado");
       });
       const userId = request.headers["user-id"] as string;
-      if (!userId) return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+      if (!userId){
+        throw new UnauthorizedError("Usuário não autenticado");
+      }
 
       const temPermissao = await usuarioTemPermissao(userId, "pedidos_visualizar");
       if (!temPermissao) return reply.status(403).send({ mensagem: "Acesso negado" });
@@ -134,7 +146,10 @@ export async function pedidosRoutes(app: FastifyInstance) {
 
       return reply.send(pedido);
     } catch (error) {
-      console.error("Erro ao buscar pedido:", error);
+      if (error instanceof UnauthorizedError) {
+        return reply.status(401).send({ error: error.message });
+      }
+
       return reply.status(500).send({ mensagem: "Erro interno no servidor" });
     }
   });
@@ -145,7 +160,9 @@ export async function pedidosRoutes(app: FastifyInstance) {
         throw new UnauthorizedError("Token inválido ou expirado");
       });
       const userId = request.headers["user-id"] as string;
-      if (!userId) return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+      if (!userId){
+        throw new UnauthorizedError("Usuário não autenticado");
+      }
 
       const temPermissao = await usuarioTemPermissao(userId, "pedidos_editar");
       if (!temPermissao) return reply.status(403).send({ mensagem: "Acesso negado" });
@@ -185,7 +202,10 @@ export async function pedidosRoutes(app: FastifyInstance) {
         pedido: pedidoAtualizado,
       });
     } catch (error) {
-      console.error("Erro ao atualizar status:", error);
+      if (error instanceof UnauthorizedError) {
+        return reply.status(401).send({ error: error.message });
+      }
+
       return reply.status(500).send({ mensagem: "Erro interno no servidor" });
     }
   });
@@ -196,7 +216,9 @@ export async function pedidosRoutes(app: FastifyInstance) {
         throw new UnauthorizedError("Token inválido ou expirado");
       });
       const userId = request.headers["user-id"] as string;
-      if (!userId) return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+      if (!userId){
+        throw new UnauthorizedError("Usuário não autenticado");
+      }
 
       const temPermissao = await usuarioTemPermissao(userId, "pedidos_editar");
       if (!temPermissao) return reply.status(403).send({ mensagem: "Acesso negado" });
@@ -239,7 +261,10 @@ export async function pedidosRoutes(app: FastifyInstance) {
 
       return reply.send({ mensagem: "Itens atualizados com sucesso" });
     } catch (error) {
-      console.error("Erro ao atualizar itens:", error);
+      if (error instanceof UnauthorizedError) {
+        return reply.status(401).send({ error: error.message });
+      }
+
       return reply.status(500).send({ mensagem: "Erro interno no servidor" });
     }
   });
@@ -250,7 +275,9 @@ export async function pedidosRoutes(app: FastifyInstance) {
         throw new UnauthorizedError("Token inválido ou expirado");
       });
       const userId = request.headers["user-id"] as string;
-      if (!userId) return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+      if (!userId){
+        throw new UnauthorizedError("Usuário não autenticado");
+      }
 
       const temPermissao = await usuarioTemPermissao(userId, "pedidos_editar");
       if (!temPermissao) return reply.status(403).send({ mensagem: "Acesso negado" });
@@ -289,7 +316,10 @@ export async function pedidosRoutes(app: FastifyInstance) {
         pedido: pedidoAtualizado,
       });
     } catch (error) {
-      console.error("Erro ao concluir pedido com estoque:", error);
+      if (error instanceof UnauthorizedError) {
+        return reply.status(401).send({ error: error.message });
+      }
+
       return reply.status(500).send({ mensagem: "Erro interno no servidor" });
     }
   });
@@ -328,7 +358,10 @@ export async function pedidosRoutes(app: FastifyInstance) {
 
       return reply.send({ mensagem: "Registro de email criado" });
     } catch (error) {
-      console.error("Erro ao registrar email:", error);
+      if (error instanceof UnauthorizedError) {
+        return reply.status(401).send({ error: error.message });
+      }
+
       return reply.status(500).send({ mensagem: "Erro interno" });
     }
   });

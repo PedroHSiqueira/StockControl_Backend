@@ -81,8 +81,6 @@ export async function emailRoutes(app: FastifyInstance) {
       });
 
     } catch (error: any) {
-      console.error('❌ Erro ao enviar email de suporte:', error);
-
       return reply.status(500).send({
         success: false,
         message: 'Erro ao enviar mensagem. Tente novamente.',
@@ -124,8 +122,6 @@ export async function emailRoutes(app: FastifyInstance) {
       });
 
     } catch (error: any) {
-      console.error('❌ Erro ao enviar email de recuperação:', error);
-
       return reply.status(500).send({
         success: false,
         message: 'Erro ao enviar email de recuperação. Tente novamente.',
@@ -259,8 +255,6 @@ export async function emailRoutes(app: FastifyInstance) {
       });
 
     } catch (error: any) {
-      console.error('❌ Erro ao enviar email de pedido:', error);
-
       return reply.status(500).send({
         success: false,
         message: 'Erro ao enviar email de pedido. Tente novamente.',

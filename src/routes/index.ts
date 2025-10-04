@@ -1,6 +1,6 @@
 export { exportRoutes } from "./export/exportDados";
-export { catalogoEmpresa } from "./catalogo/catalogo-empresa";
-export { toggleCatalogo } from "./catalogo/alterar-catalogo";
+export { catalogoEmpresa } from "./catalogo/get-catalogo";
+export { toggleCatalogo } from "./catalogo/update-catalogo";
 
 export { createUser } from "./usuarios/create-user";
 export { getUsers } from "./usuarios/get-users";
@@ -43,7 +43,7 @@ export { createVenda } from "./vendas/create-venda";
 export { getVendas } from "./vendas/get-produtos";
 
 export { getLogs } from "./logs/get-logs";
-export { emailRoutes } from "./email/email";
+export { emailRoutes } from "./email/create-email";
 export { createKey } from "./chaves/create-chave";
 export { getKey } from "./chaves/get-chave";
 export { updateKey } from "./chaves/update-chave";
@@ -52,10 +52,10 @@ export { createCliente } from "./clientes/create-cliente";
 export { getCliente } from "./clientes/get-cliente";
 export { updateCliente } from "./clientes/update-cliente";
 export { deleteCliente } from "./clientes/delete-cliente";
-export { verificarEstoque } from "./estoque/verificar-estoque";
+export { verificarEstoque } from "./estoque/post-storage";
 export { permissoesRoutes } from "./permissoes/permissoes";
 
-export { movimentacoesEstoqueRoutes } from "./movimentacoes/movimentacoes-estoque";
+export { movimentacoesEstoqueRoutes } from "./movimentacoes/post-movimentacoes";
 
 export { pedidosRoutes } from "./pedidos/pedidos";
 

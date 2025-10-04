@@ -1,13 +1,17 @@
 import { FastifyInstance } from "fastify";
 import { prisma } from "../../lib/prisma";
 import { usuarioTemPermissao } from "../../lib/permissaoUtils";
+import { UnauthorizedError } from "../../exceptions/UnauthorizedException";
 
 export async function deleteProduto(app: FastifyInstance) {
   app.delete("/produtos/:id", async (request, reply) => {
     try {
+      await request.jwtVerify().catch(() => {
+        throw new UnauthorizedError("Token inválido ou expirado");
+      });
       const userId = request.headers["user-id"] as string;
       if (!userId) {
-        return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+        throw new UnauthorizedError("Usuário não autenticado");
       }
 
       const temPermissao = await usuarioTemPermissao(userId, "produtos_excluir");
@@ -77,8 +81,6 @@ export async function deleteProduto(app: FastifyInstance) {
         });
       }
 
-
-
       await prisma.produto.delete({
         where: { id: produtoId },
       });
@@ -94,11 +96,13 @@ export async function deleteProduto(app: FastifyInstance) {
 
       return reply.status(200).send({
         mensagem: `Produto excluído com sucesso. 
-                  ${movimentacoesVinculadas.length > 0 ? `${movimentacoesVinculadas.length} movimentação(ões) de estoque também foram excluída(s).` : ''}
-                  ${vendasVinculadas.length > 0 ? `${vendasVinculadas.length} venda(s) vinculada(s) também foram excluída(s).` : ''}`.trim(),
+                  ${movimentacoesVinculadas.length > 0 ? `${movimentacoesVinculadas.length} movimentação(ões) de estoque também foram excluída(s).` : ""}
+                  ${vendasVinculadas.length > 0 ? `${vendasVinculadas.length} venda(s) vinculada(s) também foram excluída(s).` : ""}`.trim(),
       });
     } catch (error: any) {
-      console.error("Erro ao excluir produto:", error);
+      if (error instanceof UnauthorizedError) {
+        return reply.status(401).send({ error: error.message });
+      }
 
       if (error.code === "P2003") {
         return reply.status(409).send({

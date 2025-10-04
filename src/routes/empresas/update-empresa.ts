@@ -1,7 +1,8 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
 import { prisma } from "../../lib/prisma";
 import cloudinary from "../../config/cloudinaryConfig";
-import { UnauthorizedError } from "../../exceptions/UnauthorizedError";
+import { UnauthorizedError } from "../../exceptions/UnauthorizedException";
+import { PhotoUploadError } from "../../exceptions/PhotoUploadException";
 
 export async function updateEmpresa(app: FastifyInstance) {
   app.put("/empresa/:id/upload-foto", async (request: FastifyRequest, reply) => {
@@ -14,7 +15,7 @@ export async function updateEmpresa(app: FastifyInstance) {
       const userId = request.headers["user-id"] as string;
 
       if (!userId) {
-        return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+        throw new UnauthorizedError("Usuário não autenticado");
       }
 
       const usuario = await prisma.usuario.findUnique({
@@ -65,8 +66,7 @@ export async function updateEmpresa(app: FastifyInstance) {
           },
           (error, result) => {
             if (error) {
-              console.error("ERRO CLOUDINARY:", error);
-              reject(error);
+              reject(new PhotoUploadError("Erro no upload da foto"));
             } else {
               resolve(result);
             }
@@ -83,7 +83,14 @@ export async function updateEmpresa(app: FastifyInstance) {
         fileSize: fileBuffer.length,
       });
     } catch (error) {
-      console.error("Erro no upload da foto para update:", error);
+      if (error instanceof UnauthorizedError) {
+        return reply.status(401).send({ error: error.message });
+      }
+
+      if (error instanceof PhotoUploadError) {
+        return reply.status(502).send({ error: error.message });
+      }
+
       return reply.status(500).send({
         error: "Erro no upload da foto",
         details: error instanceof Error ? error.message : String(error),
@@ -146,7 +153,10 @@ export async function updateEmpresa(app: FastifyInstance) {
 
       return reply.send(empresaAtualizada);
     } catch (error) {
-      console.error("Erro ao atualizar empresa:", error);
+      if (error instanceof UnauthorizedError) {
+        return reply.status(401).send({ error: error.message });
+      }
+
       return reply.status(500).send({
         mensagem: "Erro interno no servidor",
         error: error instanceof Error ? error.message : "Erro desconhecido",
