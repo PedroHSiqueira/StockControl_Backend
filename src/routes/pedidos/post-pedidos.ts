@@ -2,7 +2,7 @@ import { FastifyInstance } from "fastify";
 import { prisma } from "../../lib/prisma";
 import { usuarioTemPermissao } from "../../lib/permissaoUtils";
 import { criarPedidoCompleto, concluirPedidoComEstoque } from "../../lib/pedidoUtils";
-import { UnauthorizedError } from "../../exceptions/UnauthorizedError";
+import { UnauthorizedError } from "../../exceptions/UnauthorizedException";
 
 export async function postpedidos(app: FastifyInstance) {
   app.post("/pedidos", async (request, reply) => {

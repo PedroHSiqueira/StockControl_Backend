@@ -1,7 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { prisma } from "../../lib/prisma";
 import { usuarioTemPermissao } from "../../lib/permissaoUtils";
-import { UnauthorizedError } from "../../exceptions/UnauthorizedError";
+import { UnauthorizedError } from "../../exceptions/UnauthorizedException";
 
 export async function getpedidos(app: FastifyInstance) {
 
