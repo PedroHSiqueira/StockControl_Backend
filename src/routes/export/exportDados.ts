@@ -33,12 +33,6 @@ export async function exportRoutes(app: FastifyInstance) {
       const { entityType } = exportParams.parse(request.params);
       const { startDate, endDate, empresaId } = exportBody.parse(request.body);
 
-      const result = await ExportService.exportData(entityType, {
-        startDate,
-        endDate,
-        empresaId,
-      });
-
       let usuarioNome = "Desconhecido";
       try {
         const usuario = await prisma.usuario.findUnique({
@@ -50,21 +44,30 @@ export async function exportRoutes(app: FastifyInstance) {
         console.error("Erro ao buscar usuário:", userError);
       }
 
-      const periodoDesc = startDate && endDate ? `${new Date(startDate).toLocaleDateString("pt-BR")} à ${new Date(endDate).toLocaleDateString("pt-BR")}` : "Todos os dados";
+      const result = await ExportService.exportData(entityType, {
+        startDate,
+        endDate,
+        empresaId,
+      });
+
+      const periodoDesc = startDate && endDate 
+        ? `${new Date(startDate).toLocaleDateString("pt-BR")} à ${new Date(endDate).toLocaleDateString("pt-BR")}`
+        : "Todos os dados";
+
+      const descricaoLegivel = `Exportação de ${entityType} | Usuário: ${usuarioNome} | Período: ${periodoDesc}`;
 
       await prisma.logs.create({
         data: {
-          descricao: JSON.stringify({
-            entityType,
-            periodo: periodoDesc,
-          }),
+          descricao: descricaoLegivel, 
           tipo: "CRIACAO",
           empresaId,
           usuarioId,
         },
       });
 
-      reply.header("Content-Type", result.contentType).header("Content-Disposition", `attachment; filename="${result.fileName}"`).send(result.buffer);
+      reply.header("Content-Type", result.contentType)
+          .header("Content-Disposition", `attachment; filename="${result.fileName}"`)
+          .send(result.buffer);
     } catch (error) {
       console.error("Erro detalhado na rota de exportação:", error);
       reply.status(500).send({
@@ -96,7 +99,7 @@ export async function exportRoutes(app: FastifyInstance) {
         where: {
           empresaId,
           descricao: {
-            contains: "Exportação",
+            startsWith: "Exportação", 
           },
         },
         include: {
@@ -109,7 +112,7 @@ export async function exportRoutes(app: FastifyInstance) {
         orderBy: {
           createdAt: "desc",
         },
-        take: 20,
+        take: 50, 
       });
 
       reply.send(history);
