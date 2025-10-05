@@ -1,8 +1,8 @@
 import { prisma } from "./prisma";
 
 export class EstoqueNotificacaoService {
-  private static readonly INTERVALO_VERIFICACAO = 60 * 60 * 1000; 
-  private static readonly INTERVALO_NOTIFICACAO = 24 * 60 * 60 * 1000; 
+  private static readonly INTERVALO_VERIFICACAO = 60 * 60 * 1000;
+  private static readonly INTERVALO_NOTIFICACAO = 24 * 60 * 60 * 1000;
   private static readonly MARGEM_ALERTA = 5;
 
   private static emExecucao = false;
@@ -158,10 +158,10 @@ export class EstoqueNotificacaoService {
 
     const titulo = this.getTituloNotificacao(tipo, idioma);
     const descricao = this.getDescricaoNotificacao(
-      produto.nome, 
-      quantidade, 
-      produto.quantidadeMin, 
-      tipo, 
+      produto.nome,
+      quantidade,
+      produto.quantidadeMin,
+      tipo,
       produtoIdParam,
       idioma
     );
@@ -192,28 +192,28 @@ export class EstoqueNotificacaoService {
   }
 
   private static getDescricaoNotificacao(
-    nomeProduto: string, 
-    quantidade: number, 
-    quantidadeMin: number, 
-    tipo: string, 
+    nomeProduto: string,
+    quantidade: number,
+    quantidadeMin: number,
+    tipo: string,
     produtoId: number,
     idioma: 'pt' | 'en' = 'pt'
   ): string {
     const traducoes = {
       pt: {
-        ALERTA: `O produto ${nomeProduto} está com estoque próximo do limite.\n${quantidade} unidades restantes.\nQTD Min: ${quantidadeMin} unidades`,
-        CRITICO: `O produto ${nomeProduto} está com estoque CRÍTICO.\n${quantidade} unidades restantes.\nQTD Min: ${quantidadeMin} unidades\nÉ necessário repor urgentemente!`,
-        ZERADO: `O produto ${nomeProduto} está com estoque ZERADO.\n0 unidades restantes.\nQTD Min: ${quantidadeMin} unidades\nReposição IMEDIATA necessária!`
+        ALERTA: `O produto ${nomeProduto} está com estoque próximo do limite.\n${quantidade} unidades restantes.\nQTD Min: ${quantidadeMin} unidades\nProduto ID: ${produtoId}`,
+        CRITICO: `O produto ${nomeProduto} está com estoque CRÍTICO.\n${quantidade} unidades restantes.\nQTD Min: ${quantidadeMin} unidades\nÉ necessário repor urgentemente!\nProduto ID: ${produtoId}`,
+        ZERADO: `O produto ${nomeProduto} está com estoque ZERADO.\n0 unidades restantes.\nQTD Min: ${quantidadeMin} unidades\nReposição IMEDIATA necessária!\nProduto ID: ${produtoId}`
       },
       en: {
-        ALERTA: `Product ${nomeProduto} is running low on stock.\n${quantidade} units remaining.\nMin Qty: ${quantidadeMin} units`,
-        CRITICO: `Product ${nomeProduto} has CRITICAL stock level.\n${quantidade} units remaining.\nMin Qty: ${quantidadeMin} units\nUrgent restocking required!`,
-        ZERADO: `Product ${nomeProduto} is OUT OF STOCK.\n0 units remaining.\nMin Qty: ${quantidadeMin} units\nIMMEDIATE restocking required!`
+        ALERTA: `Product ${nomeProduto} is running low on stock.\n${quantidade} units remaining.\nMin Qty: ${quantidadeMin} units\nProduct ID: ${produtoId}`,
+        CRITICO: `Product ${nomeProduto} has CRITICAL stock level.\n${quantidade} units remaining.\nMin Qty: ${quantidadeMin} units\nUrgent restocking required!\nProduct ID: ${produtoId}`,
+        ZERADO: `Product ${nomeProduto} is OUT OF STOCK.\n0 units remaining.\nMin Qty: ${quantidadeMin} units\nIMMEDIATE restocking required!\nProduct ID: ${produtoId}`
       }
     };
 
     const textos = traducoes[idioma];
-    return textos[tipo as keyof typeof textos] || `Alerta para o produto ${nomeProduto}`;
+    return textos[tipo as keyof typeof textos] || `Alerta para o produto ${nomeProduto}\nProduto ID: ${produtoId}`;
   }
 
   private static getTituloNotificacao(
@@ -223,7 +223,7 @@ export class EstoqueNotificacaoService {
     const titulos = {
       pt: {
         ALERTA: 'Alerta de Estoque',
-        CRITICO: 'Estoque Crítico', 
+        CRITICO: 'Estoque Crítico',
         ZERADO: 'Estoque Zerado'
       },
       en: {
@@ -232,7 +232,7 @@ export class EstoqueNotificacaoService {
         ZERADO: 'Out of Stock'
       }
     };
-    
+
     const textos = titulos[idioma];
     return textos[tipo as keyof typeof textos] || textos.ALERTA;
   }
@@ -308,10 +308,10 @@ export class EstoqueNotificacaoService {
     this.intervaloId = setInterval(async () => {
       try {
         await this.verificarEstoqueBaixo();
-      } catch (error) {}
+      } catch (error) { }
     }, this.INTERVALO_VERIFICACAO);
 
-    this.verificarEstoqueBaixo().catch(() => {});
+    this.verificarEstoqueBaixo().catch(() => { });
   }
 
   static pararServicoVerificacao() {
