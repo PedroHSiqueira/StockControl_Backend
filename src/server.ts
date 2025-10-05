@@ -34,7 +34,12 @@ app.register(fastifyMultipart, {
   attachFieldsToBody: false,
 });
 
-app.register(fastifyJwt, { secret: process.env.JWT_SECRET || "supersecret" });
+app.register(fastifyJwt, {
+  secret: process.env.JWT_SECRET || "supersecret",
+  sign: {
+    expiresIn: "7d" 
+  }
+});
 
 app.register(Routes.getPermissoes);
 app.register(Routes.updatePermissoes);

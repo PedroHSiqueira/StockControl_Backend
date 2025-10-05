@@ -62,7 +62,6 @@ export async function loginUser(app: FastifyInstance) {
           email: user.email,
           tipo: user.tipo
         },
-        { expiresIn: "7d" }
       );
 
       return reply.send({
@@ -148,7 +147,6 @@ export async function loginUser(app: FastifyInstance) {
           email: user.email,
           tipo: user.tipo
         },
-        { expiresIn: "7d" }
       );
 
 
