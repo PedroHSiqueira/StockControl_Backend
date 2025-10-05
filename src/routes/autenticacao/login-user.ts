@@ -5,7 +5,7 @@ import { prisma } from "../../lib/prisma";
 
 export async function loginUser(app: FastifyInstance) {
   app.post("/usuario/login", async (request, reply) => {
-    
+
     const loginUserBody = z.object({
       email: z.string().email(),
       senha: z.string(),
@@ -29,8 +29,8 @@ export async function loginUser(app: FastifyInstance) {
       }
 
       if (!user.emailVerificado) {
-        
-        return reply.status(403).send({ 
+
+        return reply.status(403).send({
           message: "Email não verificado. Você será redirecionado para verificar seu email.",
           codigo: "EMAIL_NAO_VERIFICADO",
           precisaVerificacao: true,
@@ -38,8 +38,8 @@ export async function loginUser(app: FastifyInstance) {
         });
       }
 
-      const precisa2FA = !user.doisFADataAprovado || 
-        (new Date().getTime() - user.doisFADataAprovado.getTime()) > 30 * 24 * 60 * 60 * 1000;
+      const precisa2FA = !user.doisFADataAprovado ||
+        (new Date().getTime() - user.doisFADataAprovado.getTime()) > 7 * 24 * 60 * 60 * 1000;
       if (user.doisFADataAprovado) {
         const diasDesdeAprovacao = Math.floor(
           (new Date().getTime() - user.doisFADataAprovado.getTime()) / (24 * 60 * 60 * 1000)
@@ -47,7 +47,7 @@ export async function loginUser(app: FastifyInstance) {
       }
 
       if (precisa2FA) {
-        
+
         return reply.status(200).send({
           message: "Verificação em duas etapas necessária",
           precisa2FA: true,
@@ -56,12 +56,12 @@ export async function loginUser(app: FastifyInstance) {
       }
 
       const token = app.jwt.sign(
-        { 
-          id: user.id, 
-          nome: user.nome, 
+        {
+          id: user.id,
+          nome: user.nome,
           email: user.email,
           tipo: user.tipo
-        }, 
+        },
         { expiresIn: "7d" }
       );
 
@@ -79,8 +79,49 @@ export async function loginUser(app: FastifyInstance) {
     }
   });
 
+
+  app.get("/usuario/verificar-sessao", async (request, reply) => {
+    try {
+      await request.jwtVerify();
+
+      const user = await prisma.usuario.findUnique({
+        where: { email: (request.user as any).email },
+        select: {
+          doisFADataAprovado: true,
+          doisFAAprovado: true,
+          emailVerificado: true
+        }
+      });
+
+      if (!user) {
+        return reply.status(404).send({ sessaoValida: false });
+      }
+
+      if (!user.emailVerificado) {
+        return reply.status(403).send({ sessaoValida: false });
+      }
+
+      if (!user.doisFAAprovado || !user.doisFADataAprovado) {
+        return reply.send({ sessaoValida: true });
+      }
+
+      const tempoDesdeAprovacao = new Date().getTime() - user.doisFADataAprovado.getTime();
+      const sessaoValida = tempoDesdeAprovacao <= 7 * 24 * 60 * 60 * 1000;
+
+      return reply.send({
+        sessaoValida,
+        aprovadoAte: sessaoValida && user.doisFADataAprovado
+          ? new Date(user.doisFADataAprovado.getTime() + 7 * 24 * 60 * 60 * 1000)
+          : null
+      });
+    } catch (error) {
+      console.error("❌ Erro ao verificar sessão:", error);
+      return reply.status(401).send({ sessaoValida: false });
+    }
+  });
+
   app.post("/usuario/login-finalizar", async (request, reply) => {
-    
+
     const loginFinalizarBody = z.object({
       email: z.string().email(),
     });
@@ -101,12 +142,12 @@ export async function loginUser(app: FastifyInstance) {
       }
 
       const token = app.jwt.sign(
-        { 
-          id: user.id, 
-          nome: user.nome, 
+        {
+          id: user.id,
+          nome: user.nome,
           email: user.email,
           tipo: user.tipo
-        }, 
+        },
         { expiresIn: "7d" }
       );
 

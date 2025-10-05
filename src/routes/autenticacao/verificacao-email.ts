@@ -19,7 +19,7 @@ export async function verificacaoEmailRoutes(app: FastifyInstance) {
   }
 
   async function enviarEmailVerificacao(email: string, codigo: string, tipo: 'registro' | '2fa') {
-    const assunto = tipo === 'registro' 
+    const assunto = tipo === 'registro'
       ? '📧 Confirmação de Email - StockControl'
       : '🔐 Código de Verificação em Duas Etapas - StockControl';
 
@@ -65,7 +65,7 @@ export async function verificacaoEmailRoutes(app: FastifyInstance) {
   }
 
   app.post("/verificacao/enviar-codigo-registro", async (request, reply) => {
-    
+
     const enviarCodigoBody = z.object({
       email: z.string().email(),
     });
@@ -74,7 +74,7 @@ export async function verificacaoEmailRoutes(app: FastifyInstance) {
       const { email } = enviarCodigoBody.parse(request.body);
 
       const codigo = gerarCodigoVerificacao();
-      const expiracao = new Date(Date.now() + 10 * 60 * 1000); 
+      const expiracao = new Date(Date.now() + 10 * 60 * 1000);
 
       const usuario = await prisma.usuario.findUnique({
         where: { email },
@@ -98,7 +98,7 @@ export async function verificacaoEmailRoutes(app: FastifyInstance) {
 
       await enviarEmailVerificacao(email, codigo, 'registro');
 
-      return reply.send({ 
+      return reply.send({
         message: "Código de verificação enviado com sucesso",
         expiracao: expiracao
       });
@@ -109,7 +109,7 @@ export async function verificacaoEmailRoutes(app: FastifyInstance) {
   });
 
   app.post("/verificacao/confirmar-email", async (request, reply) => {
-    
+
     const confirmarEmailBody = z.object({
       email: z.string().email(),
       codigo: z.string().length(6),
@@ -145,7 +145,7 @@ export async function verificacaoEmailRoutes(app: FastifyInstance) {
           codigoVerificacao: null,
           codigoExpiracao: null,
           doisFAAprovado: true,
-          doisFADataAprovado: new Date(), 
+          doisFADataAprovado: new Date(),
         },
       });
 
@@ -157,7 +157,7 @@ export async function verificacaoEmailRoutes(app: FastifyInstance) {
   });
 
   app.post("/verificacao/enviar-codigo-2fa", async (request, reply) => {
-    
+
     const enviarCodigoBody = z.object({
       email: z.string().email(),
     });
@@ -173,18 +173,18 @@ export async function verificacaoEmailRoutes(app: FastifyInstance) {
         return reply.status(404).send({ message: "Usuário não encontrado" });
       }
 
-      const precisa2FA = !usuario.doisFADataAprovado || 
-        (new Date().getTime() - usuario.doisFADataAprovado.getTime()) > 30 * 24 * 60 * 60 * 1000;
+      const precisa2FA = !usuario.doisFADataAprovado ||
+        (new Date().getTime() - usuario.doisFADataAprovado.getTime()) > 7 * 24 * 60 * 60 * 1000;
 
       if (!precisa2FA) {
-        return reply.status(200).send({ 
+        return reply.status(200).send({
           message: "2FA não necessário",
-          precisaVerificacao: false 
+          precisaVerificacao: false
         });
       }
 
       const codigo = gerarCodigoVerificacao();
-      const expiracao = new Date(Date.now() + 10 * 60 * 1000); 
+      const expiracao = new Date(Date.now() + 10 * 60 * 1000);
 
       await prisma.usuario.update({
         where: { email },
@@ -197,7 +197,7 @@ export async function verificacaoEmailRoutes(app: FastifyInstance) {
 
       await enviarEmailVerificacao(email, codigo, '2fa');
 
-      return reply.send({ 
+      return reply.send({
         message: "Código de verificação 2FA enviado com sucesso",
         expiracao: expiracao,
         precisaVerificacao: true
@@ -209,7 +209,7 @@ export async function verificacaoEmailRoutes(app: FastifyInstance) {
   });
 
   app.post("/verificacao/verificar-2fa", async (request, reply) => {
-    
+
     const verificar2FABody = z.object({
       email: z.string().email(),
       codigo: z.string().length(6),
@@ -244,9 +244,9 @@ export async function verificacaoEmailRoutes(app: FastifyInstance) {
         },
       });
 
-      return reply.send({ 
+      return reply.send({
         message: "Verificação 2FA realizada com sucesso",
-        aprovadoAte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        aprovadoAte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
       });
     } catch (error) {
       console.error("❌ Erro ao verificar 2FA:", error);
@@ -255,7 +255,7 @@ export async function verificacaoEmailRoutes(app: FastifyInstance) {
   });
 
   app.post("/verificacao/reenviar-codigo", async (request, reply) => {
-    
+
     const reenviarCodigoBody = z.object({
       email: z.string().email(),
       tipo: z.enum(['registro', '2fa']),
@@ -300,7 +300,7 @@ export async function verificacaoEmailRoutes(app: FastifyInstance) {
 
       await enviarEmailVerificacao(email, codigo, tipo);
 
-      return reply.send({ 
+      return reply.send({
         message: "Código reenviado com sucesso",
         expiracao: expiracao
       });
