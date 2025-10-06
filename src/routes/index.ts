@@ -40,7 +40,7 @@ export { deleteConvite } from "./convites/delete-convites";
 export { updateConvite } from "./convites/update-convites";
 
 export { createVenda } from "./vendas/create-venda";
-export { getVendas } from "./vendas/get-produtos";
+export { getVendas } from "./vendas/get-vendas";
 
 export { getLogs } from "./logs/get-logs";
 export { emailRoutes } from "./email/create-email";
