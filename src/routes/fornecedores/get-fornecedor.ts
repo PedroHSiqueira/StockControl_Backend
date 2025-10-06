@@ -1,44 +1,71 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { prisma } from "../../lib/prisma";
+import { UnauthorizedError } from "../../exceptions/UnauthorizedException";
 
 export async function getFornecedor(app: FastifyInstance) {
   app.get("/fornecedor", async (request, reply) => {
-    const fornecedor = await prisma.fornecedor.findMany();
-    reply.send(fornecedor);
+    try {
+      await request.jwtVerify().catch(() => {
+        throw new UnauthorizedError("Token inválido ou expirado");
+      });
+
+      const fornecedor = await prisma.fornecedor.findMany();
+      reply.send(fornecedor);
+    } catch (error) {
+      if (error instanceof UnauthorizedError) {
+        return reply.status(401).send({ error: error.message });
+      }
+      return reply.status(500).send({ mensagem: "Erro interno no servidor" });
+    }
   });
 
+  app.get("/fornecedor/empresa/:empresaId", async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      await request.jwtVerify().catch(() => {
+        throw new UnauthorizedError("Token inválido ou expirado");
+      });
 
-app.get("/fornecedor/empresa/:empresaId", async (request: FastifyRequest, reply: FastifyReply) => {
-  try {
-    const { empresaId } = request.params as { empresaId: string };
-    
-    const fornecedores = await prisma.fornecedor.findMany({
-      where: {
-        empresaId: empresaId
-      },
-      orderBy: {
-        nome: 'asc'
+      const { empresaId } = request.params as { empresaId: string };
+
+      const fornecedores = await prisma.fornecedor.findMany({
+        where: {
+          empresaId: empresaId,
+        },
+        orderBy: {
+          nome: "asc",
+        },
+      });
+
+      reply.send(fornecedores);
+    } catch (error) {
+      if (error instanceof UnauthorizedError) {
+        return reply.status(401).send({ error: error.message });
       }
-    });
 
-    reply.send(fornecedores);
-  } catch (error) {
-    console.error("Erro ao buscar fornecedores da empresa:", error);
-    reply.status(500).send({ mensagem: "Erro interno ao buscar fornecedores" });
-  }
-});
+      return reply.status(500).send({ mensagem: "Erro interno ao buscar fornecedores" });
+    }
+  });
 
   app.get("/fornecedor/contagem/:empresaId", async (request, reply) => {
-    const { empresaId } = request.params as { empresaId: string };
-    const contagem = await prisma.fornecedor.aggregate({
-      where: {
-        empresaId: empresaId,
-      },
-      _count: {
-        id: true,
-      },
-    });
+    try {
+      await request.jwtVerify().catch(() => {
+        throw new UnauthorizedError("Token inválido ou expirado");
+      });
+      const { empresaId } = request.params as { empresaId: string };
+      const contagem = await prisma.fornecedor.aggregate({
+        where: {
+          empresaId: empresaId,
+        },
+        _count: {
+          id: true,
+        },
+      });
 
-    reply.send(contagem);
+      reply.send(contagem);
+    } catch (error) {
+      if (error instanceof UnauthorizedError) {
+        return reply.status(401).send({ error: error.message });
+      }
+    }
   });
 }

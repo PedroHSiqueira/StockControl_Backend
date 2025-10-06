@@ -1,10 +1,15 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
 import { prisma } from "../../lib/prisma";
 import { usuarioTemPermissao } from "../../lib/permissaoUtils";
+import { UnauthorizedError } from "../../exceptions/UnauthorizedException";
 
 export async function deleteFornecedor(app: FastifyInstance) {
   app.delete("/fornecedor/:id", async (request: FastifyRequest, reply) => {
     try {
+      await request.jwtVerify().catch(() => {
+        throw new UnauthorizedError("Token inválido ou expirado");
+      });
+
       const userId = request.headers["user-id"] as string;
       const { id } = request.params as { id: string };
 
@@ -64,7 +69,10 @@ export async function deleteFornecedor(app: FastifyInstance) {
 
       return reply.status(200).send({ mensagem: "Fornecedor excluído com sucesso" });
     } catch (error) {
-      console.error("Erro ao excluir fornecedor:", error);
+      if (error instanceof UnauthorizedError) {
+        return reply.status(401).send({ error: error.message });
+      }
+
       return reply.status(500).send({
         mensagem: "Erro interno no servidor",
         error: error instanceof Error ? error.message : "Erro desconhecido",

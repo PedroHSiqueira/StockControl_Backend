@@ -3,10 +3,14 @@ import { prisma } from "../../lib/prisma";
 import cloudinary from "../../config/cloudinaryConfig";
 
 import { usuarioTemPermissao } from "../../lib/permissaoUtils";
-
+import { UnauthorizedError } from "../../exceptions/UnauthorizedException";
+import { PhotoUploadError } from "../../exceptions/PhotoUploadException";
 
 export async function updateFornecedor(app: FastifyInstance) {
   app.put("/fornecedor/:id/upload-foto", async (request: FastifyRequest, reply) => {
+    await request.jwtVerify().catch(() => {
+      throw new UnauthorizedError("Token inválido ou expirado");
+    });
     try {
       const userId = request.headers["user-id"] as string;
       if (!userId) {
@@ -19,7 +23,7 @@ export async function updateFornecedor(app: FastifyInstance) {
       }
 
       const { id } = request.params as { id: string };
-      
+
       const fornecedorExistente = await prisma.fornecedor.findUnique({
         where: { id: String(id) },
       });
@@ -59,8 +63,7 @@ export async function updateFornecedor(app: FastifyInstance) {
           },
           (error, result) => {
             if (error) {
-              console.error("ERRO CLOUDINARY:", error);
-              reject(error);
+              reject(new PhotoUploadError("Erro no upload da foto"));
             } else {
               resolve(result);
             }
@@ -74,20 +77,30 @@ export async function updateFornecedor(app: FastifyInstance) {
         success: true,
         message: "Upload da foto realizado com sucesso",
         fotoUrl: (result as any)?.secure_url,
-        fileSize: fileBuffer.length
+        fileSize: fileBuffer.length,
       });
-
     } catch (error) {
-      console.error("Erro no upload da foto para update:", error);
+      if (error instanceof UnauthorizedError) {
+        return reply.status(401).send({ error: error.message });
+      }
+
+      if (error instanceof PhotoUploadError) {
+        return reply.status(502).send({ error: error.message });
+      }
+
       return reply.status(500).send({
         error: "Erro no upload da foto",
-        details: error instanceof Error ? error.message : String(error)
+        details: error instanceof Error ? error.message : String(error),
       });
     }
   });
 
   app.put("/fornecedor/:id", async (request: FastifyRequest, reply) => {
     try {
+      await request.jwtVerify().catch(() => {
+        throw new UnauthorizedError("Token inválido ou expirado");
+      });
+
       const userId = request.headers["user-id"] as string;
 
       if (!userId) {
@@ -101,17 +114,8 @@ export async function updateFornecedor(app: FastifyInstance) {
 
       const { id } = request.params as { id: string };
       const body = request.body as any;
-      
-      const {
-        nome,
-        email,
-        cnpj,
-        telefone,
-        categoria,
-        empresaId,
-        usuarioId,
-        fotoUrl 
-      } = body;
+
+      const { nome, email, cnpj, telefone, categoria, empresaId, usuarioId, fotoUrl } = body;
 
       if (!nome?.trim() || !email?.trim() || !cnpj?.trim() || !telefone?.trim() || !empresaId?.trim()) {
         return reply.status(400).send({
@@ -160,7 +164,10 @@ export async function updateFornecedor(app: FastifyInstance) {
 
       return reply.send(fornecedor);
     } catch (error) {
-      console.error("Erro ao atualizar fornecedor:", error);
+      if (error instanceof UnauthorizedError) {
+        return reply.status(401).send({ error: error.message });
+      }
+
       return reply.status(500).send({
         mensagem: "Erro interno no servidor",
         error: error instanceof Error ? error.message : "Erro desconhecido",
