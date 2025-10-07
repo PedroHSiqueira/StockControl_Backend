@@ -13,9 +13,7 @@ export async function createFornecedor(app: FastifyInstance) {
     });
     try {
       const userId = request.headers["user-id"] as string;
-      if (!userId) {
-        return reply.status(401).send({ mensagem: "Usuário não autenticado" });
-      }
+      if (!userId) throw new UnauthorizedError("Usuário não autenticado");
 
       const temPermissao = await usuarioTemPermissao(userId, "fornecedores_criar");
       if (!temPermissao) {
@@ -85,9 +83,7 @@ export async function createFornecedor(app: FastifyInstance) {
       });
       const userId = request.headers["user-id"] as string;
 
-      if (!userId) {
-        return reply.status(401).send({ mensagem: "Usuário não autenticado" });
-      }
+      if (!userId) throw new UnauthorizedError("Usuário não autenticado");
 
       const temPermissao = await usuarioTemPermissao(userId, "fornecedores_criar");
       if (!temPermissao) {

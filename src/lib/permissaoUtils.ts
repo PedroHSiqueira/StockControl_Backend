@@ -75,9 +75,7 @@ export function verificarPermissao(permissaoChave: string) {
     try {
       const userId = request.headers["user-id"] as string;
 
-      if (!userId) {
-        return reply.status(401).send({ mensagem: "Usuário não autenticado" });
-      }
+      if (!userId) throw new UnauthorizedError("Usuário não autenticado");
 
       const temPermissao = await usuarioTemPermissao(userId, permissaoChave);
 

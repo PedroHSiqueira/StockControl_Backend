@@ -13,9 +13,7 @@ export async function createCliente(app: FastifyInstance) {
 
       const userId = request.headers["user-id"] as string;
 
-      if (!userId) {
-        return reply.status(401).send({ mensagem: "Usuário não autenticado" });
-      }
+      if (!userId) throw new UnauthorizedError("Usuário não autenticado");
 
       const temPermissao = await usuarioTemPermissao(userId, "clientes_criar");
       if (!temPermissao) {

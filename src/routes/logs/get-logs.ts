@@ -73,7 +73,7 @@ export async function getLogs(app: FastifyInstance) {
       });
 
       const userId = request.headers["user-id"] as string;
-      if (!userId) return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+      if (!userId) throw new UnauthorizedError("Usuário não autenticado");
 
       const usuario = await prisma.usuario.findUnique({
         where: { id: userId },

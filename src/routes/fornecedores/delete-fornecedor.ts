@@ -13,9 +13,7 @@ export async function deleteFornecedor(app: FastifyInstance) {
       const userId = request.headers["user-id"] as string;
       const { id } = request.params as { id: string };
 
-      if (!userId) {
-        return reply.status(401).send({ mensagem: "Usuário não autenticado" });
-      }
+      if (!userId) throw new UnauthorizedError("Usuário não autenticado");
 
       const temPermissao = await usuarioTemPermissao(userId, "fornecedores_excluir");
       if (!temPermissao) {

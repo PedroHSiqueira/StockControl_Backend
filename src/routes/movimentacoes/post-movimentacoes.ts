@@ -2,13 +2,13 @@ import { FastifyInstance } from "fastify";
 import { prisma } from "../../lib/prisma";
 import { usuarioTemPermissao } from "../../lib/permissaoUtils";
 import { calcularSaldoProduto, calcularSaldosProdutos } from "../../lib/estoqueUtils";
+import { UnauthorizedError } from "../../exceptions/UnauthorizedException";
 
 export async function movimentacoesEstoqueRoutes(app: FastifyInstance) {
-  
   app.post("/movimentacoes-estoque", async (request, reply) => {
     try {
-      const userId = request.headers['user-id'] as string;
-      if (!userId) return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+      const userId = request.headers["user-id"] as string;
+      if (!userId) throw new UnauthorizedError("Usuário não autenticado");
 
       const temPermissao = await usuarioTemPermissao(userId, "estoque_gerenciar");
       if (!temPermissao) return reply.status(403).send({ mensagem: "Acesso negado" });
@@ -16,20 +16,20 @@ export async function movimentacoesEstoqueRoutes(app: FastifyInstance) {
       const { produtoId, tipo, quantidade, motivo, observacao, empresaId, vendaId } = request.body as any;
 
       const produto = await prisma.produto.findUnique({
-        where: { id: produtoId }
+        where: { id: produtoId },
       });
 
       if (!produto) {
         return reply.status(404).send({ mensagem: "Produto não encontrado" });
       }
 
-      if (tipo === 'SAIDA') {
+      if (tipo === "SAIDA") {
         const saldoAtual = await calcularSaldoProduto(produtoId);
         if (saldoAtual < quantidade) {
-          return reply.status(400).send({ 
-            mensagem: "Estoque insuficiente", 
+          return reply.status(400).send({
+            mensagem: "Estoque insuficiente",
             saldoAtual,
-            quantidadeSolicitada: quantidade 
+            quantidadeSolicitada: quantidade,
           });
         }
       }
@@ -43,13 +43,13 @@ export async function movimentacoesEstoqueRoutes(app: FastifyInstance) {
           observacao,
           empresaId: empresaId || produto.empresaId,
           usuarioId: userId,
-          vendaId: vendaId || null
-        }
+          vendaId: vendaId || null,
+        },
       });
 
       return reply.status(201).send(movimentacao);
     } catch (error) {
-      console.error("Erro ao criar movimentação:", error);
+      if (error instanceof UnauthorizedError) return reply.status(401).send({ error: error.message });
       return reply.status(500).send({ mensagem: "Erro interno" });
     }
   });
@@ -57,14 +57,14 @@ export async function movimentacoesEstoqueRoutes(app: FastifyInstance) {
   app.get("/movimentacoes-estoque/produto/:produtoId", async (request, reply) => {
     try {
       const { produtoId } = request.params as { produtoId: string };
-      
+
       const movimentacoes = await prisma.movimentacaoEstoque.findMany({
         where: { produtoId: Number(produtoId) },
         include: {
           usuario: { select: { nome: true } },
-          venda: { include: { cliente: true } }
+          venda: { include: { cliente: true } },
         },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: "desc" },
       });
 
       return reply.send(movimentacoes);
@@ -77,7 +77,7 @@ export async function movimentacoesEstoqueRoutes(app: FastifyInstance) {
   app.get("/produtos/:id/saldo", async (request, reply) => {
     try {
       const { id } = request.params as { id: string };
-      
+
       const saldo = await calcularSaldoProduto(Number(id));
       return reply.send({ saldo });
     } catch (error) {
@@ -89,7 +89,7 @@ export async function movimentacoesEstoqueRoutes(app: FastifyInstance) {
   app.post("/produtos/saldos", async (request, reply) => {
     try {
       const { produtoIds } = request.body as { produtoIds: number[] };
-      
+
       const saldos = await calcularSaldosProdutos(produtoIds);
       return reply.send(saldos);
     } catch (error) {

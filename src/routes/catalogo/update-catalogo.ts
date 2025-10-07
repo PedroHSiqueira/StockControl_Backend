@@ -1,15 +1,14 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
 import { prisma } from "../../lib/prisma";
 import { usuarioTemPermissao } from "../../lib/permissaoUtils";
+import { UnauthorizedError } from "../../exceptions/UnauthorizedException";
 
 export async function toggleCatalogo(app: FastifyInstance) {
   app.put("/empresa/:id/catalogo", async (request: FastifyRequest, reply) => {
     try {
       const userId = request.headers["user-id"] as string;
 
-      if (!userId) {
-        return reply.status(401).send({ mensagem: "Usuário não autenticado" });
-      }
+      if (!userId) throw new UnauthorizedError("Usuário não autenticado");
 
       const temPermissao = await usuarioTemPermissao(userId, "empresa_gerenciar");
       if (!temPermissao) {
@@ -25,7 +24,7 @@ export async function toggleCatalogo(app: FastifyInstance) {
 
       return reply.send(empresa);
     } catch (error) {
-      console.error("Erro ao atualizar catálogo:", error);
+      if (error instanceof UnauthorizedError) return reply.status(401).send({ error: error.message });
       return reply.status(500).send({
         mensagem: "Erro interno no servidor",
       });
