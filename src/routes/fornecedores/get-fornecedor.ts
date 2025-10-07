@@ -9,7 +9,13 @@ export async function getFornecedor(app: FastifyInstance) {
         throw new UnauthorizedError("Token inválido ou expirado");
       });
 
-      const fornecedor = await prisma.fornecedor.findMany();
+      const fornecedor = await prisma.fornecedor.findMany(
+        {
+          include: {
+            Produto: true,
+          },
+        }
+      );
       reply.send(fornecedor);
     } catch (error) {
       if (error instanceof UnauthorizedError) {
@@ -30,6 +36,9 @@ export async function getFornecedor(app: FastifyInstance) {
       const fornecedores = await prisma.fornecedor.findMany({
         where: {
           empresaId: empresaId,
+        },
+        include: {
+          Produto: true,
         },
         orderBy: {
           nome: "asc",
