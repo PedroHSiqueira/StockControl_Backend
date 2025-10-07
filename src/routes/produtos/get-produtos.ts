@@ -73,10 +73,7 @@ export async function getProduto(app: FastifyInstance) {
 
       reply.send(produtosComSaldo);
     } catch (error) {
-      if (error instanceof UnauthorizedError) {
-        return reply.status(401).send({ error: error.message });
-      }
-
+      if (error instanceof UnauthorizedError) return reply.status(401).send({ error: error.message });
       reply.status(500).send({ mensagem: "Erro interno ao buscar produtos" });
     }
   });
@@ -113,10 +110,7 @@ export async function getProduto(app: FastifyInstance) {
 
       reply.send({ contagemQuantidade, contagemPreco, count });
     } catch (error) {
-      if (error instanceof UnauthorizedError) {
-        return reply.status(401).send({ error: error.message });
-      }
-
+      if (error instanceof UnauthorizedError) return reply.status(401).send({ error: error.message });
       reply.status(500).send({ mensagem: "Erro interno" });
     }
   });

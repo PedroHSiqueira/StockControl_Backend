@@ -4,6 +4,7 @@ import cloudinary from "../../config/cloudinaryConfig";
 import { usuarioTemPermissao } from "../../lib/permissaoUtils";
 import { UnauthorizedError } from "../../exceptions/UnauthorizedException";
 import { PhotoUploadError } from "../../exceptions/PhotoUploadException";
+import { AccessDeniedException } from "../../exceptions/AccessDeniedException";
 
 export async function createProduto(app: FastifyInstance) {
   app.post("/produtos/upload-foto", async (request: FastifyRequest, reply) => {
@@ -53,14 +54,8 @@ export async function createProduto(app: FastifyInstance) {
         fileSize: fileBuffer.length,
       });
     } catch (error) {
-      if (error instanceof UnauthorizedError) {
-        return reply.status(401).send({ error: error.message });
-      }
-
-      if (error instanceof PhotoUploadError) {
-        return reply.status(502).send({ error: error.message });
-      }
-
+      if (error instanceof UnauthorizedError) return reply.status(401).send({ error: error.message });
+      if (error instanceof PhotoUploadError) return reply.status(502).send({ error: error.message });
       return reply.status(500).send({
         error: "Erro no upload da foto",
         details: error instanceof Error ? error.message : String(error),
@@ -82,7 +77,7 @@ export async function createProduto(app: FastifyInstance) {
 
       const temPermissao = await usuarioTemPermissao(userId, "produtos_criar");
       if (!temPermissao) {
-        return reply.status(403).send({ mensagem: "Acesso negado. Permissão necessária: produtos_criar" });
+        throw new AccessDeniedException("Acesso negado. Permissão necessária: produtos_criar");
       }
 
       const body = request.body as any;
@@ -128,49 +123,11 @@ export async function createProduto(app: FastifyInstance) {
 
       return reply.status(201).send(produto);
     } catch (error) {
-      if (error instanceof UnauthorizedError) {
-        return reply.status(401).send({ error: error.message });
-      }
-
+      if (error instanceof UnauthorizedError) return reply.status(401).send({ error: error.message });
+      if (error instanceof AccessDeniedException) return reply.status(403).send({ error: error.message });
       return reply.status(500).send({
         mensagem: "Erro interno no servidor",
         error: error instanceof Error ? error.message : "Erro desconhecido",
-      });
-    }
-  });
-
-  app.put("/produtos/:id/catalogo", async (request: FastifyRequest, reply) => {
-    try {
-      await request.jwtVerify().catch(() => {
-        throw new UnauthorizedError("Token inválido ou expirado");
-      });
-
-      const userId = request.headers["user-id"] as string;
-
-      if (!userId) {
-        throw new UnauthorizedError("Usuário não autenticado");
-      }
-      const temPermissao = await usuarioTemPermissao(userId, "produtos_editar");
-      if (!temPermissao) {
-        return reply.status(403).send({ mensagem: "Acesso negado. Permissão necessária: produtos_editar" });
-      }
-
-      const { id } = request.params as { id: string };
-      const { noCatalogo } = request.body as { noCatalogo: boolean };
-
-      const produto = await prisma.produto.update({
-        where: { id: Number(id) },
-        data: { noCatalogo },
-      });
-
-      return reply.send(produto);
-    } catch (error) {
-      if (error instanceof UnauthorizedError) {
-        return reply.status(401).send({ error: error.message });
-      }
-
-      return reply.status(500).send({
-        mensagem: "Erro interno no servidor",
       });
     }
   });

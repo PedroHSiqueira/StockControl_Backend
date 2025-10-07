@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "../../lib/prisma";
 import { usuarioTemPermissao } from "../../lib/permissaoUtils";
 import { UnauthorizedError } from "../../exceptions/UnauthorizedException";
+import { AccessDeniedException } from "../../exceptions/AccessDeniedException";
 
 export async function createVenda(app: FastifyInstance) {
   app.post("/venda", async (request, reply) => {
@@ -14,7 +15,7 @@ export async function createVenda(app: FastifyInstance) {
       const userId = request.headers["user-id"] as string;
 
       const temPermissao = await usuarioTemPermissao(userId, "vendas_realizar");
-      if (!temPermissao) return reply.status(403).send({ mensagem: "Acesso negado" });
+      if (!temPermissao) throw new AccessDeniedException("Acesso negado");
 
       const criarVendaBody = z.object({
         empresaId: z.string(),
@@ -109,10 +110,8 @@ export async function createVenda(app: FastifyInstance) {
         venda: result,
       });
     } catch (error) {
-      if (error instanceof UnauthorizedError) {
-        return reply.status(401).send({ error: error.message });
-      }
-
+      if (error instanceof UnauthorizedError) return reply.status(401).send({ error: error.message });
+      if (error instanceof AccessDeniedException) return reply.status(403).send({ error: error.message });
       return reply.status(500).send({
         mensagem: "Erro interno no servidor",
       });

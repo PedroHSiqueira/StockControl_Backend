@@ -2,9 +2,10 @@ import { FastifyInstance } from "fastify";
 import { prisma } from "../../lib/prisma";
 import { usuarioTemPermissao } from "../../lib/permissaoUtils";
 import { UnauthorizedError } from "../../exceptions/UnauthorizedException";
+import { AccessDeniedException } from "../../exceptions/AccessDeniedException";
+import { OrderNotFoundException } from "../../exceptions/OrderNotFound";
 
 export async function getpedidos(app: FastifyInstance) {
-
   app.get("/pedidos/empresa/:empresaId", async (request, reply) => {
     try {
       await request.jwtVerify().catch(() => {
@@ -12,10 +13,11 @@ export async function getpedidos(app: FastifyInstance) {
       });
 
       const userId = request.headers["user-id"] as string;
-      if (!userId) return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+      if (!userId) throw new UnauthorizedError("Usuário não autenticado");
 
       const temPermissao = await usuarioTemPermissao(userId, "pedidos_visualizar");
-      if (!temPermissao) return reply.status(403).send({ mensagem: "Acesso negado" });
+      if (!temPermissao) throw new AccessDeniedException("Acesso negado");
+
       const { empresaId } = request.params as { empresaId: string };
 
       const pedidos = await prisma.pedido.findMany({
@@ -42,7 +44,14 @@ export async function getpedidos(app: FastifyInstance) {
 
       return reply.send(pedidosFormatados);
     } catch (error) {
-      console.error("Erro ao buscar pedidos:", error);
+      if (error instanceof UnauthorizedError) {
+        return reply.status(401).send({ error: error.message });
+      }
+
+      if (error instanceof AccessDeniedException) {
+        return reply.status(403).send({ error: error.message });
+      }
+
       return reply.status(500).send({ mensagem: "Erro interno no servidor" });
     }
   });
@@ -53,10 +62,10 @@ export async function getpedidos(app: FastifyInstance) {
         throw new UnauthorizedError("Token inválido ou expirado");
       });
       const userId = request.headers["user-id"] as string;
-      if (!userId) return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+      if (!userId) throw new UnauthorizedError("Usuário não autenticado");
 
       const temPermissao = await usuarioTemPermissao(userId, "pedidos_visualizar");
-      if (!temPermissao) return reply.status(403).send({ mensagem: "Acesso negado" });
+      if (!temPermissao) throw new AccessDeniedException("Acesso negado");
 
       const { id } = request.params as { id: string };
 
@@ -79,12 +88,14 @@ export async function getpedidos(app: FastifyInstance) {
       });
 
       if (!pedido) {
-        return reply.status(404).send({ mensagem: "Pedido não encontrado" });
+        throw new OrderNotFoundException("Pedido não encontrado");
       }
 
       return reply.send(pedido);
     } catch (error) {
-      console.error("Erro ao buscar pedido:", error);
+      if (error instanceof UnauthorizedError) return reply.status(401).send({ error: error.message });
+      if (error instanceof AccessDeniedException) return reply.status(403).send({ error: error.message });
+      if (error instanceof OrderNotFoundException) return reply.status(404).send({ error: error.message });
       return reply.status(500).send({ mensagem: "Erro interno no servidor" });
     }
   });

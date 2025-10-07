@@ -3,6 +3,9 @@ import { z } from "zod";
 import { prisma } from "../../lib/prisma";
 import bcrypt from "bcrypt";
 import { usuarioTemPermissao } from "../../lib/permissaoUtils";
+import { UserNotFoundError } from "../../exceptions/UserNotFoundException";
+import { UnauthorizedError } from "../../exceptions/UnauthorizedException";
+import { AccessDeniedException } from "../../exceptions/AccessDeniedException";
 
 export async function updateUser(app: FastifyInstance) {
   app.put("/usuario/:id", async (request, reply) => {
@@ -92,8 +95,7 @@ export async function updateUser(app: FastifyInstance) {
       });
 
       if (cliente == null) {
-        reply.send({ erro: "Usuário não encontrado" });
-        return;
+        throw new UserNotFoundError("Usuário não encontrado");
       }
 
       await prisma.usuario.update({
@@ -103,6 +105,8 @@ export async function updateUser(app: FastifyInstance) {
 
       reply.send({ mensagem: "Recuperação de senha enviada com sucesso" });
     } catch (error) {
+      if (error instanceof UserNotFoundError) return reply.status(404).send({ mensagem: error.message });
+
       reply.status(500).send({ erro: "Erro ao atualizar a senha" });
     }
   });
@@ -113,13 +117,13 @@ export async function updateUser(app: FastifyInstance) {
       const userId = request.headers["user-id"] as string | undefined;
 
       if (!userId) {
-        return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+        throw new UnauthorizedError("Usuário não autenticado");
       }
 
       const temPermissao = await usuarioTemPermissao(userId, "usuarios_excluir");
 
       if (!temPermissao) {
-        return reply.status(403).send({ mensagem: "Acesso negado. Permissão necessária: usuarios_excluir" });
+        throw new AccessDeniedException("Acesso negado");
       }
 
       const usuarioSolicitante = await prisma.usuario.findUnique({
@@ -137,22 +141,22 @@ export async function updateUser(app: FastifyInstance) {
       });
 
       if (!usuarioAlvo) {
-        return reply.status(404).send({ mensagem: "Usuário não encontrado" });
+        throw new UserNotFoundError("Usuário não encontrado");
       }
 
       if (usuarioSolicitante.tipo === "PROPRIETARIO") {
         if (usuarioAlvo.empresaId !== usuarioSolicitante.empresaId) {
-          return reply.status(403).send({ mensagem: "Não é possível remover usuário de outra empresa" });
+          throw new AccessDeniedException("Não é possível remover usuário de outra empresa");
         }
       } else if (usuarioSolicitante.tipo === "ADMIN") {
         if (usuarioAlvo.empresaId !== usuarioSolicitante.empresaId) {
-          return reply.status(403).send({ mensagem: "Não é possível remover usuário de outra empresa" });
+          throw new AccessDeniedException("Não é possível remover usuário de outra empresa");
         }
         if (usuarioAlvo.tipo !== "FUNCIONARIO") {
-          return reply.status(403).send({ mensagem: "Administradores só podem remover funcionários" });
+          throw new AccessDeniedException("Não é possível remover usuário de outra empresa");
         }
       } else {
-        return reply.status(403).send({ mensagem: "Acesso negado" });
+        throw new AccessDeniedException("Acesso negado");
       }
 
       const usuarioAtualizado = await prisma.usuario.update({
@@ -175,37 +179,43 @@ export async function updateUser(app: FastifyInstance) {
         usuario: usuarioAtualizado,
       });
     } catch (error) {
-      console.error("Erro detalhado ao remover usuário da empresa:", error);
+      if (error instanceof AccessDeniedException) return reply.status(403).send({ mensagem: error.message });
       reply.status(500).send({ mensagem: "Erro interno ao remover usuário" });
     }
   });
 
   app.put("/recuperacao/alterar", async (request, reply) => {
-    const updateBody = z.object({
-      email: z.string().email(),
-      senha: z.string(),
-      recuperacao: z.string(),
-    });
+    try {
+      const updateBody = z.object({
+        email: z.string().email(),
+        senha: z.string(),
+        recuperacao: z.string(),
+      });
 
-    const { email, senha, recuperacao } = updateBody.parse(request.body);
-    const usuario = await prisma.usuario.findUnique({
-      where: { email },
-    });
+      const { email, senha, recuperacao } = updateBody.parse(request.body);
+      const usuario = await prisma.usuario.findUnique({
+        where: { email },
+      });
 
-    if (!usuario) {
-      return reply.status(404).send({ mensagem: "Usuário não encontrado" });
+      if (!usuario) {
+        throw new UserNotFoundError("Usuário não encontrado");
+      }
+
+      if (usuario.recuperacao !== recuperacao) {
+        return reply.status(400).send({ mensagem: "Código de recuperação inválido" });
+      }
+
+      const salt = bcrypt.genSaltSync(12);
+      const hash = bcrypt.hashSync(senha, salt);
+      await prisma.usuario.update({
+        where: { email },
+        data: { senha: hash, recuperacao: null },
+      });
+      reply.send({ mensagem: "Senha alterada com sucesso" });
+    } catch (error) {
+      if (error instanceof UserNotFoundError) return reply.status(404).send({ mensagem: error.message });
+
+      return reply.status(500).send({ mensagem: "Erro interno no servidor" });
     }
-
-    if (usuario.recuperacao !== recuperacao) {
-      return reply.status(400).send({ mensagem: "Código de recuperação inválido" });
-    }
-
-    const salt = bcrypt.genSaltSync(12);
-    const hash = bcrypt.hashSync(senha, salt);
-    await prisma.usuario.update({
-      where: { email },
-      data: { senha: hash, recuperacao: null },
-    });
-    reply.send({ mensagem: "Senha alterada com sucesso" });
   });
 }

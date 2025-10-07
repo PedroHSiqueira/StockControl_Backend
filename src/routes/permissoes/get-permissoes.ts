@@ -1,5 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { prisma } from "../../lib/prisma";
+import { UserNotFoundError } from "../../exceptions/UserNotFoundException";
 
 export async function getPermissoes(app: FastifyInstance) {
   app.get("/permissoes", async (request, reply) => {
@@ -18,8 +19,7 @@ export async function getPermissoes(app: FastifyInstance) {
 
       return reply.send(permissoesAgrupadas);
     } catch (error) {
-      console.error("Erro ao buscar permissões:", error);
-      return reply.status(500).send({ mensagem: "Erro interno no servidor" });
+      return reply.status(500).send({ mensagem: "Erro interno no servidor", error });
     }
   });
 
@@ -30,16 +30,16 @@ export async function getPermissoes(app: FastifyInstance) {
       const usuario = await prisma.usuario.findUnique({
         where: { id: userId },
         include: {
-          UsuarioPermissao: { 
-            include: { 
-              permissao: true
+          UsuarioPermissao: {
+            include: {
+              permissao: true,
             },
           },
         },
       });
 
       if (!usuario) {
-        return reply.status(404).send({ mensagem: "Usuário não encontrado" });
+        throw new UserNotFoundError("Usuário não encontrado");
       }
 
       if (!usuario.permissoesPersonalizadas) {
@@ -67,7 +67,10 @@ export async function getPermissoes(app: FastifyInstance) {
         permissoesPersonalizadas: true,
       });
     } catch (error) {
-      console.error("Erro ao buscar permissões do usuário:", error);
+      if (error instanceof UserNotFoundError) {
+        return reply.status(404).send({ error: error.message });
+      }
+
       return reply.status(500).send({ mensagem: "Erro interno no servidor" });
     }
   });
@@ -89,7 +92,7 @@ export async function getPermissoes(app: FastifyInstance) {
       });
 
       if (!usuario) {
-        return reply.status(404).send({ mensagem: "Usuário não encontrado" });
+        throw new UserNotFoundError("Usuário não encontrado");
       }
 
       if (!usuario.permissoesPersonalizadas) {
@@ -119,7 +122,7 @@ export async function getPermissoes(app: FastifyInstance) {
 
       return reply.send({ temPermissao });
     } catch (error) {
-      console.error("Erro ao verificar permissão:", error);
+      if (error instanceof UserNotFoundError) return reply.status(404).send({ error: error.message });
       return reply.status(500).send({ mensagem: "Erro interno no servidor" });
     }
   });

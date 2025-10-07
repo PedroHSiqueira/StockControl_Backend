@@ -3,6 +3,8 @@ import { prisma } from "../../lib/prisma";
 import { usuarioTemPermissao } from "../../lib/permissaoUtils";
 import { atualizarStatusPedido } from "../../lib/pedidoUtils";
 import { UnauthorizedError } from "../../exceptions/UnauthorizedException";
+import { AccessDeniedException } from "../../exceptions/AccessDeniedException";
+import { ProductNotFoundException } from "../../exceptions/ProductNotFound";
 
 export async function updatepedidos(app: FastifyInstance) {
   app.put("/pedidos/:id/status", async (request, reply) => {
@@ -11,10 +13,10 @@ export async function updatepedidos(app: FastifyInstance) {
         throw new UnauthorizedError("Token inválido ou expirado");
       });
       const userId = request.headers["user-id"] as string;
-      if (!userId) return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+      if (!userId) throw new UnauthorizedError("Usuário não autenticado");
 
       const temPermissao = await usuarioTemPermissao(userId, "pedidos_editar");
-      if (!temPermissao) return reply.status(403).send({ mensagem: "Acesso negado" });
+      if (!temPermissao) throw new AccessDeniedException("Acesso negado");
 
       const { id } = request.params as { id: string };
       const { status } = request.body as any;
@@ -25,7 +27,7 @@ export async function updatepedidos(app: FastifyInstance) {
       });
 
       if (!pedidoExistente) {
-        return reply.status(404).send({ mensagem: "Pedido não encontrado" });
+        throw new ProductNotFoundException("Pedido não encontrado");
       }
 
       const pedidoAtualizado = await atualizarStatusPedido(id, status, userId, pedidoExistente.empresaId);
@@ -51,7 +53,9 @@ export async function updatepedidos(app: FastifyInstance) {
         pedido: pedidoAtualizado,
       });
     } catch (error) {
-      console.error("Erro ao atualizar status:", error);
+      if (error instanceof UnauthorizedError) return reply.status(401).send({ error: error.message });
+      if (error instanceof AccessDeniedException) return reply.status(403).send({ error: error.message });
+      if (error instanceof ProductNotFoundException) return reply.status(404).send({ error: error.message });
       return reply.status(500).send({ mensagem: "Erro interno no servidor" });
     }
   });
@@ -62,10 +66,10 @@ export async function updatepedidos(app: FastifyInstance) {
         throw new UnauthorizedError("Token inválido ou expirado");
       });
       const userId = request.headers["user-id"] as string;
-      if (!userId) return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+      if (!userId) throw new UnauthorizedError("Usuário não autenticado");
 
       const temPermissao = await usuarioTemPermissao(userId, "pedidos_editar");
-      if (!temPermissao) return reply.status(403).send({ mensagem: "Acesso negado" });
+      if (!temPermissao) throw new AccessDeniedException("Acesso negado");
 
       const { id } = request.params as { id: string };
       const { itens } = request.body as any;
@@ -76,7 +80,7 @@ export async function updatepedidos(app: FastifyInstance) {
       });
 
       if (!pedido) {
-        return reply.status(404).send({ mensagem: "Pedido não encontrado" });
+        throw new ProductNotFoundException("Pedido não encontrado");
       }
 
       await Promise.all(
@@ -105,7 +109,9 @@ export async function updatepedidos(app: FastifyInstance) {
 
       return reply.send({ mensagem: "Itens atualizados com sucesso" });
     } catch (error) {
-      console.error("Erro ao atualizar itens:", error);
+      if (error instanceof UnauthorizedError) return reply.status(401).send({ error: error.message });
+      if (error instanceof AccessDeniedException) return reply.status(403).send({ error: error.message });
+      if (error instanceof ProductNotFoundException) return reply.status(404).send({ error: error.message });
       return reply.status(500).send({ mensagem: "Erro interno no servidor" });
     }
   });

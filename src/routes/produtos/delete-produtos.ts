@@ -2,6 +2,8 @@ import { FastifyInstance } from "fastify";
 import { prisma } from "../../lib/prisma";
 import { usuarioTemPermissao } from "../../lib/permissaoUtils";
 import { UnauthorizedError } from "../../exceptions/UnauthorizedException";
+import { AccessDeniedException } from "../../exceptions/AccessDeniedException";
+import { ProductNotFoundException } from "../../exceptions/ProductNotFound";
 
 export async function deleteProduto(app: FastifyInstance) {
   app.delete("/produtos/:id", async (request, reply) => {
@@ -16,7 +18,7 @@ export async function deleteProduto(app: FastifyInstance) {
 
       const temPermissao = await usuarioTemPermissao(userId, "produtos_excluir");
       if (!temPermissao) {
-        return reply.status(403).send({ mensagem: "Acesso negado. Permissão necessária: produtos_excluir" });
+        throw new AccessDeniedException("Acesso negado. Permissão necessária: produtos_excluir");
       }
 
       const { id } = request.params as { id: string };
@@ -31,7 +33,7 @@ export async function deleteProduto(app: FastifyInstance) {
       });
 
       if (!produto) {
-        return reply.status(404).send({ mensagem: "Produto não encontrado" });
+        throw new ProductNotFoundException("Produto não encontrado");
       }
 
       const usuario = await prisma.usuario.findUnique({
@@ -40,7 +42,7 @@ export async function deleteProduto(app: FastifyInstance) {
       });
 
       if (!usuario || usuario.empresaId !== produto.empresaId) {
-        return reply.status(403).send({ mensagem: "Acesso negado ao produto" });
+        throw new UnauthorizedError("Usuário não autorizado");
       }
 
       const movimentacoesVinculadas = await prisma.movimentacaoEstoque.findMany({
@@ -100,9 +102,9 @@ export async function deleteProduto(app: FastifyInstance) {
                   ${vendasVinculadas.length > 0 ? `${vendasVinculadas.length} venda(s) vinculada(s) também foram excluída(s).` : ""}`.trim(),
       });
     } catch (error: any) {
-      if (error instanceof UnauthorizedError) {
-        return reply.status(401).send({ error: error.message });
-      }
+      if (error instanceof UnauthorizedError) return reply.status(401).send({ error: error.message });
+      if (error instanceof AccessDeniedException) return reply.status(403).send({ error: error.message });
+      if (error instanceof ProductNotFoundException) return reply.status(404).send({ error: error.message });
 
       if (error.code === "P2003") {
         return reply.status(409).send({

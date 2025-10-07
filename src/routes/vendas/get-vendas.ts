@@ -28,9 +28,7 @@ export async function getVendas(app: FastifyInstance) {
         vendas,
       });
     } catch (error) {
-      if (error instanceof UnauthorizedError) {
-        return reply.status(401).send({ error: error.message });
-      }
+      if (error instanceof UnauthorizedError) return reply.status(401).send({ error: error.message });
       return reply.status(500).send({ mensagem: "Erro interno no servidor" });
     }
   });
@@ -76,10 +74,7 @@ export async function getVendas(app: FastifyInstance) {
 
       return reply.status(200).send(produtosComNomes);
     } catch (error) {
-      if (error instanceof UnauthorizedError) {
-        return reply.status(401).send({ error: error.message });
-      }
-
+      if (error instanceof UnauthorizedError) return reply.status(401).send({ error: error.message });
       return reply.status(500).send({ mensagem: "Erro interno ao buscar top produtos" });
     }
   });
@@ -110,9 +105,7 @@ export async function getVendas(app: FastifyInstance) {
         quantidadeVendas: total._count.id,
       });
     } catch (error) {
-      if (error instanceof UnauthorizedError) {
-        return reply.status(401).send({ error: error.message });
-      }
+      if (error instanceof UnauthorizedError) return reply.status(401).send({ error: error.message });
       return reply.status(500).send({ mensagem: "Erro interno no servidor" });
     }
   });
