@@ -72,16 +72,37 @@ export async function getLogs(app: FastifyInstance) {
         throw new UnauthorizedError("Token inválido ou expirado");
       });
 
+      const userId = request.headers["user-id"] as string;
+      if (!userId) return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+
+      const usuario = await prisma.usuario.findUnique({
+        where: { id: userId },
+        select: { empresaId: true }
+      });
+
+      if (!usuario) {
+        return reply.status(404).send({ mensagem: "Usuário não encontrado" });
+      }
+
       const { produtoId } = request.params as { produtoId: string };
+
+      const produto = await prisma.produto.findUnique({
+        where: { id: Number(produtoId) },
+        select: { empresaId: true }
+      });
+
+      if (!produto) {
+        return reply.status(404).send({ mensagem: "Produto não encontrado" });
+      }
+
+      if (produto.empresaId !== usuario.empresaId) {
+        return reply.status(403).send({ mensagem: "Acesso negado" });
+      }
 
       const logs = await prisma.logs.findMany({
         where: {
+          empresaId: usuario.empresaId, 
           OR: [
-            {
-              descricao: {
-                contains: produtoId,
-              },
-            },
             {
               descricao: {
                 contains: `"produtoId":${produtoId}`,
@@ -92,6 +113,11 @@ export async function getLogs(app: FastifyInstance) {
                 contains: `"produtoId": ${produtoId}`,
               },
             },
+            {
+              descricao: {
+                contains: `Produto Vendido:`,
+              },
+            }
           ],
         },
         include: {
