@@ -2,11 +2,12 @@ import { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { prisma } from "../../lib/prisma";
 import nodemailer from "nodemailer";
+import { UserNotFoundError } from "../../exceptions/UserNotFoundException";
 
 export async function verificacaoEmailRoutes(app: FastifyInstance) {
   const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.EMAIL_PORT || '587'),
+    host: process.env.EMAIL_HOST || "smtp.gmail.com",
+    port: parseInt(process.env.EMAIL_PORT || "587"),
     secure: false,
     auth: {
       user: process.env.EMAIL_USER,
@@ -18,17 +19,14 @@ export async function verificacaoEmailRoutes(app: FastifyInstance) {
     return Math.floor(100000 + Math.random() * 900000).toString();
   }
 
-  async function enviarEmailVerificacao(email: string, codigo: string, tipo: 'registro' | '2fa') {
-    const assunto = tipo === 'registro'
-      ? '📧 Confirmação de Email - StockControl'
-      : '🔐 Código de Verificação em Duas Etapas - StockControl';
+  async function enviarEmailVerificacao(email: string, codigo: string, tipo: "registro" | "2fa") {
+    const assunto = tipo === "registro" ? "📧 Confirmação de Email - StockControl" : "🔐 Código de Verificação em Duas Etapas - StockControl";
 
-    const texto = tipo === 'registro'
-      ? `Olá! Use o código abaixo para verificar seu email no StockControl: ${codigo}`
-      : `Seu código de verificação em duas etapas é: ${codigo}. Este código expira em 10 minutos.`;
+    const texto = tipo === "registro" ? `Olá! Use o código abaixo para verificar seu email no StockControl: ${codigo}` : `Seu código de verificação em duas etapas é: ${codigo}. Este código expira em 10 minutos.`;
 
-    const html = tipo === 'registro'
-      ? `
+    const html =
+      tipo === "registro"
+        ? `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #1976d2;">Confirme seu Email</h2>
           <p>Olá,</p>
@@ -40,7 +38,7 @@ export async function verificacaoEmailRoutes(app: FastifyInstance) {
           <p>Se você não criou uma conta no StockControl, ignore este email.</p>
         </div>
       `
-      : `
+        : `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #1976d2;">Verificação em Duas Etapas</h2>
           <p>Olá,</p>
@@ -65,7 +63,6 @@ export async function verificacaoEmailRoutes(app: FastifyInstance) {
   }
 
   app.post("/verificacao/enviar-codigo-registro", async (request, reply) => {
-
     const enviarCodigoBody = z.object({
       email: z.string().email(),
     });
@@ -81,7 +78,7 @@ export async function verificacaoEmailRoutes(app: FastifyInstance) {
       });
 
       if (!usuario) {
-        return reply.status(404).send({ message: "Usuário não encontrado" });
+        throw new UserNotFoundError("Usuário não encontrado");
       }
 
       if (usuario.emailVerificado) {
@@ -96,20 +93,19 @@ export async function verificacaoEmailRoutes(app: FastifyInstance) {
         },
       });
 
-      await enviarEmailVerificacao(email, codigo, 'registro');
+      await enviarEmailVerificacao(email, codigo, "registro");
 
       return reply.send({
         message: "Código de verificação enviado com sucesso",
-        expiracao: expiracao
+        expiracao: expiracao,
       });
     } catch (error) {
-      console.error("❌ Erro ao enviar código:", error);
+      if (error instanceof UserNotFoundError) return reply.status(404).send({ message: error.message });
       return reply.status(500).send({ message: "Erro ao enviar código de verificação" });
     }
   });
 
   app.post("/verificacao/confirmar-email", async (request, reply) => {
-
     const confirmarEmailBody = z.object({
       email: z.string().email(),
       codigo: z.string().length(6),
@@ -123,7 +119,7 @@ export async function verificacaoEmailRoutes(app: FastifyInstance) {
       });
 
       if (!usuario) {
-        return reply.status(404).send({ message: "Usuário não encontrado" });
+        throw new UserNotFoundError("Usuário não encontrado");
       }
 
       if (usuario.emailVerificado) {
@@ -151,13 +147,12 @@ export async function verificacaoEmailRoutes(app: FastifyInstance) {
 
       return reply.send({ message: "Email verificado com sucesso" });
     } catch (error) {
-      console.error("❌ Erro ao verificar email:", error);
+      if (error instanceof UserNotFoundError) return reply.status(404).send({ message: error.message });
       return reply.status(500).send({ message: "Erro ao verificar email" });
     }
   });
 
   app.post("/verificacao/enviar-codigo-2fa", async (request, reply) => {
-
     const enviarCodigoBody = z.object({
       email: z.string().email(),
     });
@@ -170,16 +165,15 @@ export async function verificacaoEmailRoutes(app: FastifyInstance) {
       });
 
       if (!usuario) {
-        return reply.status(404).send({ message: "Usuário não encontrado" });
+        throw new UserNotFoundError("Usuário não encontrado");
       }
 
-      const precisa2FA = !usuario.doisFADataAprovado ||
-        (new Date().getTime() - usuario.doisFADataAprovado.getTime()) > 7 * 24 * 60 * 60 * 1000;
+      const precisa2FA = !usuario.doisFADataAprovado || new Date().getTime() - usuario.doisFADataAprovado.getTime() > 7 * 24 * 60 * 60 * 1000;
 
       if (!precisa2FA) {
         return reply.status(200).send({
           message: "2FA não necessário",
-          precisaVerificacao: false
+          precisaVerificacao: false,
         });
       }
 
@@ -195,21 +189,20 @@ export async function verificacaoEmailRoutes(app: FastifyInstance) {
         },
       });
 
-      await enviarEmailVerificacao(email, codigo, '2fa');
+      await enviarEmailVerificacao(email, codigo, "2fa");
 
       return reply.send({
         message: "Código de verificação 2FA enviado com sucesso",
         expiracao: expiracao,
-        precisaVerificacao: true
+        precisaVerificacao: true,
       });
     } catch (error) {
-      console.error("❌ Erro ao enviar código 2FA:", error);
+      if (error instanceof UserNotFoundError) return reply.status(404).send({ message: error.message });
       return reply.status(500).send({ message: "Erro ao enviar código de verificação" });
     }
   });
 
   app.post("/verificacao/verificar-2fa", async (request, reply) => {
-
     const verificar2FABody = z.object({
       email: z.string().email(),
       codigo: z.string().length(6),
@@ -223,7 +216,7 @@ export async function verificacaoEmailRoutes(app: FastifyInstance) {
       });
 
       if (!usuario) {
-        return reply.status(404).send({ message: "Usuário não encontrado" });
+        throw new UserNotFoundError("Usuário não encontrado");
       }
 
       if (usuario.doisFAToken !== codigo) {
@@ -246,19 +239,18 @@ export async function verificacaoEmailRoutes(app: FastifyInstance) {
 
       return reply.send({
         message: "Verificação 2FA realizada com sucesso",
-        aprovadoAte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        aprovadoAte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       });
     } catch (error) {
-      console.error("❌ Erro ao verificar 2FA:", error);
+      if (error instanceof UserNotFoundError) return reply.status(404).send({ message: error.message });
       return reply.status(500).send({ message: "Erro ao verificar código" });
     }
   });
 
   app.post("/verificacao/reenviar-codigo", async (request, reply) => {
-
     const reenviarCodigoBody = z.object({
       email: z.string().email(),
-      tipo: z.enum(['registro', '2fa']),
+      tipo: z.enum(["registro", "2fa"]),
     });
 
     try {
@@ -269,13 +261,13 @@ export async function verificacaoEmailRoutes(app: FastifyInstance) {
       });
 
       if (!usuario) {
-        return reply.status(404).send({ message: "Usuário não encontrado" });
+        throw new UserNotFoundError("Usuário não encontrado");
       }
 
       const codigo = gerarCodigoVerificacao();
       const expiracao = new Date(Date.now() + 10 * 60 * 1000);
 
-      if (tipo === 'registro') {
+      if (tipo === "registro") {
         if (usuario.emailVerificado) {
           return reply.status(400).send({ message: "Email já verificado" });
         }
@@ -302,10 +294,10 @@ export async function verificacaoEmailRoutes(app: FastifyInstance) {
 
       return reply.send({
         message: "Código reenviado com sucesso",
-        expiracao: expiracao
+        expiracao: expiracao,
       });
     } catch (error) {
-      console.error("❌ Erro ao reenviar código:", error);
+      if (error instanceof UserNotFoundError) return reply.status(404).send({ message: error.message });
       return reply.status(500).send({ message: "Erro ao reenviar código" });
     }
   });

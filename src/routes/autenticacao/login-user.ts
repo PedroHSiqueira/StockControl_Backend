@@ -2,10 +2,11 @@ import { FastifyInstance } from "fastify";
 import { z } from "zod";
 import bcrypt from "bcrypt";
 import { prisma } from "../../lib/prisma";
+import { UserNotFoundError } from "../../exceptions/UserNotFoundException";
+import { UnauthorizedError } from "../../exceptions/UnauthorizedException";
 
 export async function loginUser(app: FastifyInstance) {
   app.post("/usuario/login", async (request, reply) => {
-
     const loginUserBody = z.object({
       email: z.string().email(),
       senha: z.string(),
@@ -19,50 +20,40 @@ export async function loginUser(app: FastifyInstance) {
       });
 
       if (!user) {
-        return reply.status(404).send({ message: "Usuário não encontrado" });
+        throw new UserNotFoundError("Usuário não encontrado");
       }
 
       const senhaValida = bcrypt.compareSync(senha, user.senha);
 
       if (!senhaValida) {
-        return reply.status(401).send({ message: "Senha inválida" });
+        throw new UnauthorizedError("Senha inválida");
       }
 
       if (!user.emailVerificado) {
-
         return reply.status(403).send({
           message: "Email não verificado. Você será redirecionado para verificar seu email.",
           codigo: "EMAIL_NAO_VERIFICADO",
           precisaVerificacao: true,
-          email: user.email
+          email: user.email,
         });
       }
 
-      const precisa2FA = !user.doisFADataAprovado ||
-        (new Date().getTime() - user.doisFADataAprovado.getTime()) > 7 * 24 * 60 * 60 * 1000;
-      if (user.doisFADataAprovado) {
-        const diasDesdeAprovacao = Math.floor(
-          (new Date().getTime() - user.doisFADataAprovado.getTime()) / (24 * 60 * 60 * 1000)
-        );
-      }
+      const precisa2FA = !user.doisFADataAprovado || new Date().getTime() - user.doisFADataAprovado.getTime() > 7 * 24 * 60 * 60 * 1000;
 
       if (precisa2FA) {
-
         return reply.status(200).send({
           message: "Verificação em duas etapas necessária",
           precisa2FA: true,
-          email: user.email
+          email: user.email,
         });
       }
 
-      const token = app.jwt.sign(
-        {
-          id: user.id,
-          nome: user.nome,
-          email: user.email,
-          tipo: user.tipo
-        },
-      );
+      const token = app.jwt.sign({
+        id: user.id,
+        nome: user.nome,
+        email: user.email,
+        tipo: user.tipo,
+      });
 
       return reply.send({
         message: "Usuário logado com sucesso",
@@ -70,14 +61,14 @@ export async function loginUser(app: FastifyInstance) {
         nome: user.nome,
         id: user.id,
         tipo: user.tipo,
-        precisa2FA: false
+        precisa2FA: false,
       });
     } catch (error) {
-      console.error("❌ Erro no login:", error);
+      if (error instanceof UnauthorizedError) return reply.status(401).send({ message: error.message });
+      if (error instanceof UserNotFoundError) return reply.status(404).send({ message: error.message });
       return reply.status(500).send({ message: "Erro interno do servidor" });
     }
   });
-
 
   app.get("/usuario/verificar-sessao", async (request, reply) => {
     try {
@@ -88,8 +79,8 @@ export async function loginUser(app: FastifyInstance) {
         select: {
           doisFADataAprovado: true,
           doisFAAprovado: true,
-          emailVerificado: true
-        }
+          emailVerificado: true,
+        },
       });
 
       if (!user) {
@@ -109,9 +100,7 @@ export async function loginUser(app: FastifyInstance) {
 
       return reply.send({
         sessaoValida,
-        aprovadoAte: sessaoValida && user.doisFADataAprovado
-          ? new Date(user.doisFADataAprovado.getTime() + 7 * 24 * 60 * 60 * 1000)
-          : null
+        aprovadoAte: sessaoValida && user.doisFADataAprovado ? new Date(user.doisFADataAprovado.getTime() + 7 * 24 * 60 * 60 * 1000) : null,
       });
     } catch (error) {
       console.error("❌ Erro ao verificar sessão:", error);
@@ -120,7 +109,6 @@ export async function loginUser(app: FastifyInstance) {
   });
 
   app.post("/usuario/login-finalizar", async (request, reply) => {
-
     const loginFinalizarBody = z.object({
       email: z.string().email(),
     });
@@ -133,22 +121,19 @@ export async function loginUser(app: FastifyInstance) {
       });
 
       if (!user) {
-        return reply.status(404).send({ message: "Usuário não encontrado" });
+        throw new UserNotFoundError("Usuário não encontrado");
       }
 
       if (!user.doisFAAprovado) {
         return reply.status(403).send({ message: "Verificação 2FA necessária" });
       }
 
-      const token = app.jwt.sign(
-        {
-          id: user.id,
-          nome: user.nome,
-          email: user.email,
-          tipo: user.tipo
-        },
-      );
-
+      const token = app.jwt.sign({
+        id: user.id,
+        nome: user.nome,
+        email: user.email,
+        tipo: user.tipo,
+      });
 
       return reply.send({
         message: "Login realizado com sucesso",
@@ -158,7 +143,7 @@ export async function loginUser(app: FastifyInstance) {
         tipo: user.tipo,
       });
     } catch (error) {
-      console.error("❌ Erro ao finalizar login:", error);
+      if (error instanceof UserNotFoundError) return reply.status(404).send({ message: error.message });
       return reply.status(500).send({ message: "Erro interno do servidor" });
     }
   });
