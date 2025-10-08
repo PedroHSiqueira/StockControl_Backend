@@ -30,6 +30,29 @@ export async function getUsers(app: FastifyInstance) {
     }
   });
 
+  app.get("/usuarios/empresa/:empresaId", async (request, reply) => {
+  const { empresaId } = request.params as { empresaId: string };
+
+  try {
+    const usuarios = await prisma.usuario.findMany({
+      where: {
+        empresaId: String(empresaId),
+      },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        tipo: true,
+        createdAt: true,
+      },
+    });
+
+    return reply.send(usuarios);
+  } catch (error) {
+    return reply.status(500).send({ mensagem: "Erro interno no servidor" });
+  }
+});
+
   app.get("/usuario/contagem/:empresaId", async (request, reply) => {
     const { empresaId } = request.params as { empresaId: string };
 
