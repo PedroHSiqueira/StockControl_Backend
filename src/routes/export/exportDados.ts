@@ -3,10 +3,64 @@ import { z } from "zod";
 import { ExportService } from "../../lib/export/exportService";
 import { prisma } from "../../lib/prisma";
 import { usuarioTemPermissao } from "../../lib/permissaoUtils";
+import { UnauthorizedError } from "../../exceptions/UnauthorizedException";
 
 export async function exportRoutes(app: FastifyInstance) {
+  app.get("/export/history/:empresaId", async (request, reply) => {
+    try {
+      await request.jwtVerify().catch(() => {
+        throw new UnauthorizedError("Token inválido ou expirado");
+      });
+      const usuarioId = request.headers["user-id"] as string;
+
+      if (!usuarioId) {
+        return reply.status(401).send({ mensagem: "Usuário não autenticado" });
+      }
+
+      const temPermissao = await usuarioTemPermissao(usuarioId, "exportar_dados");
+      if (!temPermissao) {
+        return reply.status(403).send({
+          mensagem: "Acesso negado. Permissão necessária: exportar_dados",
+        });
+      }
+
+      const { empresaId } = request.params as { empresaId: string };
+
+      const history = await prisma.logs.findMany({
+        where: {
+          empresaId,
+          descricao: {
+            startsWith: "Exportação",
+          },
+        },
+        include: {
+          usuario: {
+            select: {
+              nome: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 50,
+      });
+
+      reply.send(history);
+    } catch (error) {
+      if (error instanceof UnauthorizedError) return reply.status(401).send({ error: error.message });
+      reply.status(500).send({
+        mensagem: "Erro ao carregar histórico",
+        error: error instanceof Error ? error.message : "Erro desconhecido",
+      });
+    }
+  });
+
   app.post("/export/:entityType", async (request, reply) => {
     try {
+      await request.jwtVerify().catch(() => {
+        throw new UnauthorizedError("Token inválido ou expirado");
+      });
       const usuarioId = request.headers["user-id"] as string;
 
       if (!usuarioId) {
@@ -50,77 +104,26 @@ export async function exportRoutes(app: FastifyInstance) {
         empresaId,
       });
 
-      const periodoDesc = startDate && endDate 
-        ? `${new Date(startDate).toLocaleDateString("pt-BR")} à ${new Date(endDate).toLocaleDateString("pt-BR")}`
-        : "Todos os dados";
+      const periodoDesc = startDate && endDate ? `${new Date(startDate).toLocaleDateString("pt-BR")} à ${new Date(endDate).toLocaleDateString("pt-BR")}` : "Todos os dados";
 
       const descricaoLegivel = `Exportação de ${entityType} | Usuário: ${usuarioNome} | Período: ${periodoDesc}`;
 
       await prisma.logs.create({
         data: {
-          descricao: descricaoLegivel, 
+          descricao: descricaoLegivel,
           tipo: "CRIACAO",
           empresaId,
           usuarioId,
         },
       });
 
-      reply.header("Content-Type", result.contentType)
-          .header("Content-Disposition", `attachment; filename="${result.fileName}"`)
-          .send(result.buffer);
+      reply.header("Content-Type", result.contentType).header("Content-Disposition", `attachment; filename="${result.fileName}"`).send(result.buffer);
     } catch (error) {
-      console.error("Erro detalhado na rota de exportação:", error);
+      if (error instanceof UnauthorizedError) return reply.status(401).send({ error: error.message });
       reply.status(500).send({
         mensagem: "Erro ao exportar dados",
         error: error instanceof Error ? error.message : "Erro desconhecido",
         stack: process.env.NODE_ENV === "development" && error instanceof Error ? error.stack : undefined,
-      });
-    }
-  });
-
-  app.get("/export/history/:empresaId", async (request, reply) => {
-    try {
-      const usuarioId = request.headers["user-id"] as string;
-
-      if (!usuarioId) {
-        return reply.status(401).send({ mensagem: "Usuário não autenticado" });
-      }
-
-      const temPermissao = await usuarioTemPermissao(usuarioId, "exportar_dados");
-      if (!temPermissao) {
-        return reply.status(403).send({
-          mensagem: "Acesso negado. Permissão necessária: exportar_dados",
-        });
-      }
-
-      const { empresaId } = request.params as { empresaId: string };
-
-      const history = await prisma.logs.findMany({
-        where: {
-          empresaId,
-          descricao: {
-            startsWith: "Exportação", 
-          },
-        },
-        include: {
-          usuario: {
-            select: {
-              nome: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-        take: 50, 
-      });
-
-      reply.send(history);
-    } catch (error) {
-      console.error("Erro ao buscar histórico:", error);
-      reply.status(500).send({
-        mensagem: "Erro ao carregar histórico",
-        error: error instanceof Error ? error.message : "Erro desconhecido",
       });
     }
   });
