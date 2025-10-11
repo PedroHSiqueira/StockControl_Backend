@@ -20,18 +20,24 @@ export async function loginUser(app: FastifyInstance) {
       });
 
       if (!user) {
-        throw new UserNotFoundError("Usuário não encontrado");
+        return reply.status(404).send({
+          message: "Email não encontrado",
+          codigo: "EMAIL_NAO_ENCONTRADO"
+        });
       }
 
       const senhaValida = bcrypt.compareSync(senha, user.senha);
 
       if (!senhaValida) {
-        throw new UnauthorizedError("Senha inválida");
+        return reply.status(401).send({
+          message: "Senha incorreta",
+          codigo: "SENHA_INCORRETA"
+        });
       }
 
       if (!user.emailVerificado) {
         return reply.status(403).send({
-          message: "Email não verificado. Você será redirecionado para verificar seu email.",
+          message: "Email não verificado",
           codigo: "EMAIL_NAO_VERIFICADO",
           precisaVerificacao: true,
           email: user.email,
@@ -43,6 +49,7 @@ export async function loginUser(app: FastifyInstance) {
       if (precisa2FA) {
         return reply.status(200).send({
           message: "Verificação em duas etapas necessária",
+          codigo: "PRECISA_2FA",
           precisa2FA: true,
           email: user.email,
         });
@@ -57,6 +64,7 @@ export async function loginUser(app: FastifyInstance) {
 
       return reply.send({
         message: "Usuário logado com sucesso",
+        codigo: "LOGIN_SUCESSO",
         token,
         nome: user.nome,
         id: user.id,
@@ -64,9 +72,22 @@ export async function loginUser(app: FastifyInstance) {
         precisa2FA: false,
       });
     } catch (error) {
-      if (error instanceof UnauthorizedError) return reply.status(401).send({ message: error.message });
-      if (error instanceof UserNotFoundError) return reply.status(404).send({ message: error.message });
-      return reply.status(500).send({ message: "Erro interno do servidor" });
+      if (error instanceof UnauthorizedError) {
+        return reply.status(401).send({
+          message: "Senha incorreta",
+          codigo: "SENHA_INCORRETA"
+        });
+      }
+      if (error instanceof UserNotFoundError) {
+        return reply.status(404).send({
+          message: "Email não encontrado",
+          codigo: "EMAIL_NAO_ENCONTRADO"
+        });
+      }
+      return reply.status(500).send({
+        message: "Erro interno do servidor",
+        codigo: "ERRO_INTERNO"
+      });
     }
   });
 

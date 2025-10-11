@@ -40,9 +40,10 @@ export async function getEmpresa(app: FastifyInstance) {
   });
 
   app.get("/empresa/verificar-email/:email", async (request: FastifyRequest, reply: FastifyReply) => {
+    const acceptLanguage = request.headers['accept-language'] || 'pt-BR';
+    const idioma = acceptLanguage.startsWith('en') ? 'en' : 'pt';
     try {
       const { email } = request.params as { email: string };
-
       const url = request.url;
       const hasEmpresaId = url.includes("?empresaId=");
 
@@ -54,14 +55,14 @@ export async function getEmpresa(app: FastifyInstance) {
 
       const whereClauseEmpresa = empresaId
         ? {
-            email: email.toLowerCase().trim(),
-            id: {
-              not: empresaId,
-            },
-          }
+          email: email.toLowerCase().trim(),
+          id: {
+            not: empresaId,
+          },
+        }
         : {
-            email: email.toLowerCase().trim(),
-          };
+          email: email.toLowerCase().trim(),
+        };
 
       const empresaExistente = await prisma.empresa.findFirst({
         where: whereClauseEmpresa,
@@ -77,12 +78,16 @@ export async function getEmpresa(app: FastifyInstance) {
 
       const emailExiste = !!empresaExistente || !!usuarioExistente;
 
-      let mensagem = "Email disponível";
+      let mensagem = idioma === 'en' ? "Email available" : "Email disponível";
 
       if (empresaExistente) {
-        mensagem = "Este email já está em uso por outra empresa";
+        mensagem = idioma === 'en'
+          ? "This email is already in use by another company"
+          : "Este email já está em uso por outra empresa";
       } else if (usuarioExistente) {
-        mensagem = "Este email já está em uso por um usuário";
+        mensagem = idioma === 'en'
+          ? "This email is already in use by a user"
+          : "Este email já está em uso por um usuário";
       }
 
       return reply.send({
@@ -92,7 +97,10 @@ export async function getEmpresa(app: FastifyInstance) {
         mensagem: mensagem,
       });
     } catch (error) {
-      return reply.status(500).send({ mensagem: "Erro interno no servidor" });
+      const mensagemErro = idioma === 'en'
+        ? "Internal server error"
+        : "Erro interno no servidor";
+      return reply.status(500).send({ mensagem: mensagemErro });
     }
   });
 
