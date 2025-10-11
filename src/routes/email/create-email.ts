@@ -99,18 +99,72 @@ export async function emailRoutes(app: FastifyInstance) {
           message: 'Email e código são obrigatórios'
         });
       }
+      const usuario = await prisma.usuario.findUnique({
+        where: { email },
+      });
+
+      if (!usuario) {
+        return reply.status(404).send({
+          success: false,
+          message: 'Nenhuma conta encontrada com este email',
+          codigo: 'EMAIL_NAO_ENCONTRADO'
+        });
+      }
+
+      await prisma.usuario.update({
+        where: { email },
+        data: {
+          recuperacao: codigo,
+        },
+      });
 
       const emailHtml = `
-      <p>Olá, esse é seu código de alteração de senha na <strong>StockControl</strong>: <strong>${codigo}</strong></p>
-      <p><a href="https://stockcontrol-six.vercel.app/alteracao">Clique aqui para acessar a página de recuperação</a></p>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9; border-radius: 10px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #1976d2; margin: 0;">StockControl</h1>
+          <p style="color: #666; margin: 5px 0 0 0;">Recuperação de Senha</p>
+        </div>
+        
+        <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <h2 style="color: #333; margin-top: 0;">Olá, ${usuario.nome}!</h2>
+          
+          <p style="color: #666; line-height: 1.6;">
+            Você solicitou a recuperação de senha para sua conta no StockControl.
+            Use o código abaixo para redefinir sua senha:
+          </p>
+          
+          <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; text-align: center; margin: 25px 0; border: 2px dashed #ddd;">
+            <div style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1976d2;">
+              ${codigo}
+            </div>
+          </div>
+          
+          <p style="color: #666; line-height: 1.6;">
+            <strong>Este código expira em 30 minutos.</strong>
+          </p>
+          
+          <div style="margin-top: 30px; padding: 15px; background: #e3f2fd; border-radius: 6px;">
+            <p style="margin: 0; color: #1976d2; font-size: 14px;">
+              <strong>Próximo passo:</strong> 
+              <a href="${process.env.NEXT_PUBLIC_FRONTEND_URL || 'https://stockcontrol-six.vercel.app'}/alteracao" style="color: #1976d2; text-decoration: underline;">
+                Clique aqui para acessar a página de recuperação
+              </a>
+            </p>
+          </div>
+          
+          <p style="color: #999; font-size: 12px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px;">
+            Se você não solicitou esta recuperação, ignore este email.
+          </p>
+        </div>
+      </div>
     `;
 
       const mailOptions = {
         from: `"StockControl" <${process.env.EMAIL_USER}>`,
         to: email,
-        subject: '📩 Código de alteração de senha StockControl',
+        subject: '🔐 Código de Recuperação de Senha - StockControl',
         html: emailHtml,
-        text: `Seu código de recuperação é: ${codigo}\n\nAcesse: https://stockcontrol-six.vercel.app/alteracao para alterar sua senha.`
+        text: `Olá ${usuario.nome}!\n\nSeu código de recuperação de senha é: ${codigo}\n\nAcesse: ${process.env.NEXT_PUBLIC_FRONTEND_URL || 'https://stockcontrol-six.vercel.app'}/alteracao para alterar sua senha.\n\nEste código expira em 30 minutos.\n\nSe você não solicitou esta recuperação, ignore este email.`
       };
 
       const result = await transporter.sendMail(mailOptions);
@@ -122,6 +176,7 @@ export async function emailRoutes(app: FastifyInstance) {
       });
 
     } catch (error: any) {
+      console.error('❌ Erro ao enviar email de recuperação:', error);
       return reply.status(500).send({
         success: false,
         message: 'Erro ao enviar email de recuperação. Tente novamente.',
@@ -129,7 +184,6 @@ export async function emailRoutes(app: FastifyInstance) {
       });
     }
   });
-
   app.post('/email-pedidos', async (request: FastifyRequest<{ Body: PedidoRequest }>, reply: FastifyReply) => {
     try {
       const {
@@ -238,7 +292,7 @@ export async function emailRoutes(app: FastifyInstance) {
       const mailOptions = {
         from: `"${nomeEmpresaReal}" <${process.env.EMAIL_USER}>`,
         to: destinatario,
-        replyTo: emailEmpresaReal, 
+        replyTo: emailEmpresaReal,
         subject: assunto,
         html: emailHtml,
         text: `Pedido ${pedido_numero} - ${fornecedor_nome}\n\nTotal: R$ ${total.toFixed(2)}\nData: ${data}\n\nItens:\n${itens.map(item => `- ${item.produto}: ${item.quantidade} x R$ ${item.preco_unitario.toFixed(2)} = R$ ${item.total_item.toFixed(2)}`).join('\n')}\n\nContato: ${emailEmpresaReal}`
